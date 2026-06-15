@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 40" width="170" height="40">
+  <!-- Icon rounded square -->
+  <rect x="0" y="4" width="32" height="32" rx="7" fill="#2F4CDD"/>
+  <polyline points="7,20 13,27 25,13" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Text: Éval in primary blue -->
+  <text x="42" y="29" font-family="Poppins, Arial, sans-serif" font-size="20" font-weight="700" fill="#2F4CDD">Éval</text>
+  <!-- Text: ENS in dark -->
+  <text x="92" y="29" font-family="Poppins, Arial, sans-serif" font-size="20" font-weight="900" fill="#374151">ENS</text>
+</svg>
