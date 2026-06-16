@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Commentaires anonymisés')
+@section('title', 'Commentaires')
 
 @section('content')
 <div class="container-fluid">
@@ -10,108 +10,112 @@
             <h2 class="text-primary font-w600 mb-0">Commentaires anonymisés</h2>
             <p class="mb-0">Retours textuels de vos étudiants — identités masquées</p>
         </div>
-        <select class="form-select form-select-sm w-auto">
-            <option>S2 2025-2026 (en cours)</option>
-            <option>S1 2025-2026</option>
-        </select>
+        <a href="{{ route('teacher.resultats') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="lni lni-bar-chart me-1"></i>Voir les résultats
+        </a>
     </div>
 
     <div class="alert alert-info fs-13 mb-4">
         <i class="lni lni-lock-alt me-2"></i>
-        Les commentaires ci-dessous sont <strong>strictement anonymisés</strong>.
-        Toute information permettant d'identifier un étudiant a été retirée.
-        Seuls les commentaires des périodes clôturées sont visibles.
+        Les commentaires sont <strong>strictement anonymes</strong> — aucune information permettant d'identifier un étudiant n'est visible.
     </div>
 
-    {{-- Filtres --}}
+    {{-- Filtre par questionnaire --}}
     <div class="card mb-3">
         <div class="card-body py-3">
-            <div class="d-flex flex-wrap gap-2">
-                <select class="form-select w-auto" id="filterUE">
-                    <option value="">Toutes les UE</option>
-                    <option>Algorithmique avancée</option>
-                    <option>Deep Learning</option>
-                    <option>Traitement du langage</option>
+            <form method="GET" action="{{ route('teacher.commentaires') }}" class="d-flex flex-wrap gap-2 align-items-center">
+                <select name="lien_id" class="form-control w-auto">
+                    <option value="">Tous les questionnaires</option>
+                    @foreach($mesLiens as $l)
+                        <option value="{{ $l->id }}" {{ request('lien_id') == $l->id ? 'selected' : '' }}>
+                            {{ $l->titre }} — {{ $l->classe }}
+                        </option>
+                    @endforeach
                 </select>
-                <select class="form-select w-auto" id="filterSentiment">
-                    <option value="">Tous</option>
-                    <option value="positif">Positifs</option>
-                    <option value="negatif">Critiques</option>
-                    <option value="neutre">Neutres</option>
-                </select>
-                <input type="text" class="form-control w-auto" id="searchComment" placeholder="Rechercher un mot-clé...">
-            </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="lni lni-search-alt me-1"></i>Filtrer
+                </button>
+                @if(request('lien_id'))
+                    <a href="{{ route('teacher.commentaires') }}" class="btn btn-outline-secondary">
+                        <i class="lni lni-close me-1"></i>Effacer
+                    </a>
+                @endif
+            </form>
         </div>
     </div>
 
-    @php
-    $commentaires = [
-        ['Algorithmique avancée', 'Les explications sont très claires, les exemples concrets aident vraiment à comprendre les concepts.', 'positif', 4.5, 'Il y a 3 jours'],
-        ['Deep Learning', 'Le cours est intéressant mais le rythme est parfois trop rapide. Plus d\'exercices pratiques seraient appréciés.', 'neutre', 3.5, 'Il y a 5 jours'],
-        ['Algorithmique avancée', 'Excellent enseignant, très disponible et pédagogue. Les TD sont bien structurés.', 'positif', 5.0, 'Il y a 1 semaine'],
-        ['Traitement du langage', 'Contenu très riche et à jour avec les dernières avancées du domaine. Cours stimulant intellectuellement.', 'positif', 4.8, 'Il y a 1 semaine'],
-        ['Deep Learning', 'Manque parfois de clarté sur les objectifs de chaque séance. Serait bien d\'avoir un plan détaillé en début de cours.', 'negatif', 2.5, 'Il y a 2 semaines'],
-        ['Algorithmique avancée', 'Les corrections de TD arrivent souvent en retard, ce qui rend difficile la préparation des examens.', 'negatif', 3.0, 'Il y a 2 semaines'],
-        ['Traitement du langage', 'Super cours ! Les projets sont stimulants et permettent d\'appliquer concrètement les concepts vus en cours.', 'positif', 4.7, 'Il y a 3 semaines'],
-    ];
-    @endphp
-
-    <div id="listCommentaires">
-        @foreach($commentaires as [$ue, $texte, $sentiment, $note, $date])
-        <div class="card mb-3 commentaire-item" data-ue="{{ $ue }}" data-sentiment="{{ $sentiment }}">
+    {{-- Liste des commentaires --}}
+    @if($commentaires->isEmpty())
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="lni lni-comments-alt fs-1 d-block mb-3"></i>
+                Aucun commentaire {{ request('lien_id') ? 'pour ce questionnaire' : 'reçu pour le moment' }}.
+            </div>
+        </div>
+    @else
+        @foreach($commentaires as $rep)
+        @php
+            $scores   = collect($rep->scores);
+            $moyenne  = $scores->isNotEmpty() ? round($scores->avg('score') * 20) : null;
+            $color    = $moyenne >= 80 ? 'success' : ($moyenne >= 60 ? 'primary' : ($moyenne >= 40 ? 'warning' : 'danger'));
+        @endphp
+        <div class="card mb-3">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge badge-sm badge-primary">{{ $ue }}</span>
-                        @if($sentiment === 'positif')
-                            <span class="badge badge-sm badge-success">Positif</span>
-                        @elseif($sentiment === 'negatif')
-                            <span class="badge badge-sm badge-danger">Critique</span>
-                        @else
-                            <span class="badge badge-sm badge-secondary">Neutre</span>
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="badge badge-primary">{{ $rep->lien->classe }}</span>
+                        @if($rep->lien->matiere)
+                            <span class="badge badge-info">{{ $rep->lien->matiere }}</span>
                         @endif
+                        <span class="text-muted fs-12">{{ $rep->lien->titre }}</span>
                     </div>
                     <div class="d-flex align-items-center gap-3">
-                        <div class="d-flex align-items-center gap-1">
-                            @for($i = 1; $i <= 5; $i++)
-                                <span style="color: {{ $i <= round($note) ? '#FFAB2D' : '#dee2e6' }}; font-size:14px;">★</span>
-                            @endfor
-                            <span class="ms-1 fs-12 text-muted">{{ $note }}/5</span>
-                        </div>
-                        <small class="text-muted">{{ $date }}</small>
+                        @if($moyenne !== null)
+                            <span class="badge badge-{{ $color }} fs-12">{{ $moyenne }}%</span>
+                        @endif
+                        <small class="text-muted">
+                            {{ $rep->soumis_at ? $rep->soumis_at->diffForHumans() : '—' }}
+                        </small>
                     </div>
                 </div>
-                <p class="mb-0 fs-14 text-dark fst-italic">"{{ $texte }}"</p>
+
+                <p class="mb-0 fs-14 fst-italic text-dark">"{{ $rep->commentaire }}"</p>
+
+                {{-- Scores détaillés (accordéon) --}}
+                @if($scores->isNotEmpty())
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#scores-{{ $rep->id }}">
+                        <i class="lni lni-bar-chart me-1"></i>Voir les scores
+                    </button>
+                    <div class="collapse mt-2" id="scores-{{ $rep->id }}">
+                        <div class="row">
+                            @foreach($rep->scores as $s)
+                            @php $p = round($s['score'] * 20); @endphp
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex justify-content-between fs-12 mb-1">
+                                    <span class="text-muted">{{ $s['label'] }}</span>
+                                    <span class="font-w600 text-{{ $p >= 80 ? 'success' : ($p >= 60 ? 'primary' : ($p >= 40 ? 'warning' : 'danger')) }}">{{ $p }}%</span>
+                                </div>
+                                <div class="progress" style="height:5px;">
+                                    <div class="progress-bar bg-{{ $p >= 80 ? 'success' : ($p >= 60 ? 'primary' : ($p >= 40 ? 'warning' : 'danger')) }}"
+                                        style="width:{{ $p }}%"></div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
         @endforeach
-    </div>
 
-    <div class="d-flex justify-content-between align-items-center mt-2">
-        <span class="text-muted fs-13">{{ count($commentaires) }} commentaires affichés</span>
-    </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="text-muted fs-13">{{ $commentaires->total() }} commentaire{{ $commentaires->total() > 1 ? 's' : '' }} au total</span>
+            <div>{{ $commentaires->links() }}</div>
+        </div>
+    @endif
 
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    function filterCommentaires() {
-        const ue        = document.getElementById('filterUE').value.toLowerCase();
-        const sentiment = document.getElementById('filterSentiment').value;
-        const search    = document.getElementById('searchComment').value.toLowerCase();
-
-        document.querySelectorAll('.commentaire-item').forEach(card => {
-            const matchUE   = !ue   || card.dataset.ue.toLowerCase().includes(ue);
-            const matchSent = !sentiment || card.dataset.sentiment === sentiment;
-            const matchText = !search || card.textContent.toLowerCase().includes(search);
-            card.style.display = (matchUE && matchSent && matchText) ? '' : 'none';
-        });
-    }
-
-    ['filterUE', 'filterSentiment', 'searchComment'].forEach(id => {
-        document.getElementById(id).addEventListener('input', filterCommentaires);
-        document.getElementById(id).addEventListener('change', filterCommentaires);
-    });
-</script>
-@endpush

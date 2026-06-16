@@ -7,27 +7,12 @@
 <div class="col-xl-7 col-lg-8 col-md-10 col-12">
 
     {{-- En-tête questionnaire --}}
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-body p-4">
-            <h3 class="font-w700 mb-1 text-primary">{{ $lien->titre }}</h3>
-            <div class="d-flex flex-wrap gap-3 mt-2">
-                <span class="badge badge-primary px-3 py-2">
-                    <i class="lni lni-graduation me-1"></i>{{ $lien->classe }}
-                </span>
-                @if($lien->matiere)
-                    <span class="badge badge-info px-3 py-2">{{ $lien->matiere }}</span>
-                @endif
-                @if($lien->enseignant)
-                    <span class="badge badge-success px-3 py-2">
-                        <i class="lni lni-user me-1"></i>{{ $lien->enseignant->prenom }} {{ $lien->enseignant->nom }}
-                    </span>
-                @endif
-            </div>
-            <p class="text-muted fs-13 mt-3 mb-0">
-                Évaluez chaque critère de 1 (très insuffisant) à 5 (excellent). Vos réponses sont anonymes.
-            </p>
-        </div>
-    </div>
+    <div class="mb-3">
+        <p class="fs-13 text-muted mb-0" style="line-height:1.6;">
+            <i class="lni lni-lock-alt text-success me-1"></i>
+            Vos réponses concernant l'enseignant  de {{ $lien->matiere }}  Mr/Mdme {{ $lien->enseignant->prenom }} {{ $lien->enseignant->nom }} sont <strong>strictement anonymes</strong> — votre identité n'est transmise ni à l'enseignant ni à l'administration. Évaluez chaque critère : <strong>20%, 40%, 60%, 80%</strong> ou <strong>100%</strong>.
+        </p>
+    </div> 
 
     {{-- Erreurs --}}
     @if($errors->any())
@@ -40,31 +25,31 @@
     <form method="POST" action="{{ route('questionnaire.submit', $lien->token) }}">
         @csrf
 
-        {{-- Critères --}}
-        @foreach($lien->questions as $i => $question)
+        {{-- Critères (toujours depuis la BD) --}}
+        @foreach($criteres as $i => $critere)
         <div class="card mb-3 border-0 shadow-sm">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start mb-1">
-                    <h6 class="font-w600 mb-0">{{ $i + 1 }}. {{ $question['label'] }}</h6>
+                    <h6 class="font-w600 mb-0">{{ $i + 1 }}. {{ $critere->nom }}</h6>
                     <span class="badge badge-light text-dark fs-12" id="val-{{ $i }}">—</span>
                 </div>
-                @if(!empty($question['description']))
-                    <p class="text-muted fs-12 mb-3">{{ $question['description'] }}</p>
+                @if(!empty($critere->description))
+                    <p class="text-muted fs-12 mb-3">{{ $critere->description }}</p>
                 @endif
 
-                <div class="star-group mb-1" role="group" aria-label="{{ $question['label'] }}">
-                    @foreach([1 => 'Très insuffisant', 2 => 'Insuffisant', 3 => 'Correct', 4 => 'Bien', 5 => 'Excellent'] as $val => $label)
+                <div class="star-group mb-1" role="group" aria-label="{{ $critere->nom }}">
+                    @foreach([1 => '20%', 2 => '40%', 3 => '60%', 4 => '80%', 5 => '100%'] as $val => $label)
                         <div>
                             <input type="radio" name="scores[{{ $i }}]" id="s{{ $i }}_{{ $val }}"
                                 value="{{ $val }}" {{ old("scores.$i") == $val ? 'checked' : '' }}
                                 onchange="updateLabel({{ $i }}, {{ $val }}, '{{ $label }}')">
-                            <label class="star-label" for="s{{ $i }}_{{ $val }}" title="{{ $label }}">{{ $val }}</label>
+                            <label class="star-label" for="s{{ $i }}_{{ $val }}" title="{{ $label }}">{{ $label }}</label>
                         </div>
                     @endforeach
                 </div>
                 <div class="score-legend mt-1">
-                    <span>1 — Très insuffisant</span>
-                    <span>5 — Excellent</span>
+                    <span>20% — Très insuffisant</span>
+                    <span>100% — Excellent</span>
                 </div>
                 @error("scores.$i")
                     <div class="text-danger fs-12 mt-1">{{ $message }}</div>
@@ -96,11 +81,11 @@
 
 @push('scripts')
 <script>
-const LABELS = ['', 'Très insuffisant', 'Insuffisant', 'Correct', 'Bien', 'Excellent'];
+const LABELS = ['', '20%', '40%', '60%', '80%', '100%'];
 
 function updateLabel(i, val, label) {
     const el = document.getElementById('val-' + i);
-    el.textContent = val + ' — ' + label;
+    el.textContent = label;
     el.className = 'badge fs-12 ' + ['','badge-danger','badge-warning','badge-info','badge-primary','badge-success'][val];
 }
 

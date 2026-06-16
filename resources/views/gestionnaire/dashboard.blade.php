@@ -27,25 +27,6 @@
     {{-- Stat Cards --}}
     <div class="row">
         <div class="col-xl-4 col-md-6 col-sm-6">
-            <a href="{{ route('gestionnaire.etudiants') }}" class="widget-stat card text-decoration-none">
-                <div class="card-body p-4">
-                    <div class="media ai-icon d-flex">
-                        <span class="me-3 bgl-primary text-primary">
-                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2F4CDD" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                        </span>
-                        <div class="media-body">
-                            <h3 class="mb-0 text-black"><span class="counter ms-0">{{ $stats['etudiants'] }}</span></h3>
-                            <p class="mb-0">Étudiants</p>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-xl-4 col-md-6 col-sm-6">
             <a href="{{ route('gestionnaire.enseignants') }}" class="widget-stat card text-decoration-none">
                 <div class="card-body p-4">
                     <div class="media ai-icon d-flex">
@@ -147,25 +128,24 @@
             </div>
         </div>
 
-        {{-- Accès rapide --}}
+        {{-- Enseignants récents --}}
         <div class="col-xl-7 col-lg-12">
             <div class="card h-100">
                 <div class="card-header border-0 pb-0 d-flex align-items-center justify-content-between">
-                    <h4 class="card-title mb-0">Membres récents</h4>
-                    <a href="{{ route('gestionnaire.etudiants') }}" class="btn btn-xs btn-outline-primary me-1">Étudiants</a>
-                    <a href="{{ route('gestionnaire.enseignants') }}" class="btn btn-xs btn-outline-success">Enseignants</a>
+                    <h4 class="card-title mb-0">Enseignants récents</h4>
+                    <a href="{{ route('gestionnaire.enseignants') }}" class="btn btn-xs btn-outline-success">Voir tout</a>
                 </div>
                 <div class="card-body p-0">
                     @php
                         $recents = \App\Models\User::where('annexe_id', $annexe->id)
-                            ->whereIn('role', ['etudiant', 'enseignant'])
+                            ->where('role', 'enseignant')
                             ->latest()->limit(6)->get();
                     @endphp
 
                     @if($recents->isEmpty())
                         <div class="text-center py-4 text-muted fs-13">
                             <i class="lni lni-users d-block fs-2 mb-2"></i>
-                            Aucun membre inscrit dans cette annexe.
+                            Aucun enseignant inscrit dans cette annexe.
                         </div>
                     @else
                         <div class="table-responsive">
@@ -183,7 +163,7 @@
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
                                                 <div class="d-flex align-items-center justify-content-center rounded-circle text-white fs-12 fw-bold"
-                                                    style="width:32px;height:32px;flex-shrink:0;background:{{ $m->role === 'enseignant' ? '#2BC155' : '#2F4CDD' }};">
+                                                    style="width:32px;height:32px;flex-shrink:0;background:#2BC155;">
                                                     {{ strtoupper(substr($m->prenom, 0, 1)) }}
                                                 </div>
                                                 <span class="font-w500">{{ $m->prenom }} {{ $m->nom }}</span>
@@ -191,9 +171,7 @@
                                         </td>
                                         <td class="text-muted fs-13">{{ $m->email }}</td>
                                         <td>
-                                            <span class="badge badge-sm {{ $m->role === 'enseignant' ? 'badge-success' : 'badge-primary' }}">
-                                                {{ $m->role === 'enseignant' ? 'Enseignant' : 'Étudiant' }}
-                                            </span>
+                                            <span class="badge badge-sm badge-success">Enseignant</span>
                                         </td>
                                     </tr>
                                     @endforeach

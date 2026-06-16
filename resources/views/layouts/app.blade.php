@@ -220,28 +220,22 @@
                                 <span class="nav-text">Tableau de bord</span>
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('gestionnaire.etudiants') ? 'mm-active' : '' }}">
-                            <a href="{{ route('gestionnaire.etudiants') }}" class="ai-icon">
-                                <i class="flaticon-381-user-9"></i>
-                                <span class="nav-text">Étudiants</span>
-                            </a>
-                        </li>
                         <li class="{{ request()->routeIs('gestionnaire.enseignants') ? 'mm-active' : '' }}">
                             <a href="{{ route('gestionnaire.enseignants') }}" class="ai-icon">
                                 <i class="flaticon-381-user-9"></i>
                                 <span class="nav-text">Enseignants</span>
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('gestionnaire.emplois-du-temps*') ? 'mm-active' : '' }}">
-                            <a href="{{ route('gestionnaire.emplois-du-temps') }}" class="ai-icon">
-                                <i class="flaticon-381-controls-3"></i>
-                                <span class="nav-text">Emplois du temps</span>
-                            </a>
-                        </li>
                         <li class="{{ request()->routeIs('gestionnaire.liens*') ? 'mm-active' : '' }}">
                             <a href="{{ route('gestionnaire.liens') }}" class="ai-icon">
                                 <i class="flaticon-381-notepad"></i>
                                 <span class="nav-text">Questionnaires</span>
+                            </a>
+                        </li>
+                        <li class="{{ request()->routeIs('gestionnaire.questionnaires*') ? 'mm-active' : '' }}">
+                            <a href="{{ route('gestionnaire.questionnaires') }}" class="ai-icon">
+                                <i class="flaticon-381-settings-4"></i>
+                                <span class="nav-text">Configuration</span>
                             </a>
                         </li>
 

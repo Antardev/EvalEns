@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,9 +37,16 @@ class User extends Authenticatable
         return $this->belongsTo(University::class);
     }
 
+    /** Annexe unique (gestionnaire, directeur). */
     public function annexe(): BelongsTo
     {
         return $this->belongsTo(Annexe::class);
+    }
+
+    /** Annexes multiples (enseignant — many-to-many). */
+    public function annexes(): BelongsToMany
+    {
+        return $this->belongsToMany(Annexe::class, 'enseignant_annexes');
     }
 
     public function isSuperAdmin(): bool    { return $this->role === 'superadmin'; }

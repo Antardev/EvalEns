@@ -21,6 +21,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="lni lni-warning me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
     @if($liens->isEmpty())
         <div class="card border-0">
@@ -37,8 +43,9 @@
         <div class="row g-3">
             @foreach($liens as $lien)
             @php
-                $isActif = $lien->isActif();
-                $url     = $lien->urlPublique();
+                $isActif   = $lien->isActif();
+                $isExpire  = $lien->expire_at && $lien->expire_at->isPast();
+                $url       = $lien->urlPublique();
             @endphp
             <div class="col-xl-6 col-12">
                 <div class="card border-0 shadow-sm h-100">
@@ -58,10 +65,10 @@
                             </div>
                             @if($isActif)
                                 <span class="badge badge-success px-2 py-1 fs-12">Actif</span>
+                            @elseif($isExpire)
+                                <span class="badge badge-danger px-2 py-1 fs-12">Expiré</span>
                             @elseif($lien->statut === 'ferme')
                                 <span class="badge badge-secondary px-2 py-1 fs-12">Fermé</span>
-                            @else
-                                <span class="badge badge-warning px-2 py-1 fs-12">Expiré</span>
                             @endif
                         </div>
 
@@ -72,9 +79,9 @@
                                 <strong>{{ $lien->reponses_count }}</strong> réponse(s)
                             </span>
                             @if($lien->expire_at)
-                                <span class="text-muted fs-13">
+                                <span class="fs-13 {{ $isExpire ? 'text-danger' : 'text-muted' }}">
                                     <i class="lni lni-calendar me-1"></i>
-                                    Expire le {{ $lien->expire_at->format('d/m/Y') }}
+                                    {{ $isExpire ? 'Expiré le' : 'Expire le' }} {{ $lien->expire_at->format('d/m/Y à H:i') }}
                                 </span>
                             @endif
                             <span class="text-muted fs-13">
@@ -98,6 +105,22 @@
                             @endif
                         </div>
 
+                                        {{-- Alerte snapshot désynchronisé --}}
+                        @if($lien->reponses_count === 0 && count($lien->questions) < $criteres->count())
+                        <div class="alert alert-warning py-2 fs-12 mb-3 d-flex align-items-center justify-content-between">
+                            <span>
+                                <i class="lni lni-warning me-1"></i>
+                                Ce lien a <strong>{{ count($lien->questions) }} critère(s)</strong> — les critères actuels en ont <strong>{{ $criteres->count() }}</strong>.
+                            </span>
+                            <form method="POST" action="{{ route('gestionnaire.liens.rafraichir', $lien->id) }}" class="ms-2">
+                                @csrf
+                                <button type="submit" class="btn btn-xs btn-warning">
+                                    <i class="lni lni-reload me-1"></i>Rafraîchir
+                                </button>
+                            </form>
+                        </div>
+                        @endif
+
                         {{-- Actions --}}
                         <div class="d-flex gap-2 flex-wrap">
                             @if($lien->reponses_count > 0)
@@ -107,13 +130,19 @@
                                 </a>
                             @endif
 
-                            <form method="POST" action="{{ route('gestionnaire.liens.fermer', $lien->id) }}">
-                                @csrf
-                                <button type="submit" class="btn btn-sm {{ $isActif ? 'btn-warning' : 'btn-success' }}">
-                                    <i class="lni lni-{{ $isActif ? 'lock' : 'unlock' }} me-1"></i>
-                                    {{ $isActif ? 'Fermer' : 'Rouvrir' }}
-                                </button>
-                            </form>
+                            @if($isExpire)
+                                <span class="btn btn-sm btn-danger disabled" style="cursor:default;">
+                                    <i class="lni lni-timer me-1"></i>Expiré le {{ $lien->expire_at->format('d/m/Y à H:i') }}
+                                </span>
+                            @else
+                                <form method="POST" action="{{ route('gestionnaire.liens.fermer', $lien->id) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm {{ $isActif ? 'btn-warning' : 'btn-success' }}">
+                                        <i class="lni lni-{{ $isActif ? 'lock' : 'unlock' }} me-1"></i>
+                                        {{ $isActif ? 'Fermer' : 'Rouvrir' }}
+                                    </button>
+                                </form>
+                            @endif
 
                             <form method="POST" action="{{ route('gestionnaire.liens.supprimer', $lien->id) }}"
                                 onsubmit="return confirm('Supprimer ce lien et toutes ses réponses ?')">

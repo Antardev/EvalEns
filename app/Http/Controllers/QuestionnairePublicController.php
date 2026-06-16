@@ -2,48 +2,60 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Critere;
 use App\Models\LienQuestionnaire;
 use App\Models\ReponseQuestionnaire;
 use Illuminate\Http\Request;
 
 class QuestionnairePublicController extends Controller
 {
+    /** Critères à utiliser pour un lien (toujours depuis la BD, pas le snapshot). */
+    private function criteresPourLien(LienQuestionnaire $lien): \Illuminate\Support\Collection
+    {
+        $lien->loadMissing('annexe');
+        $univId = $lien->annexe->university_id ?? null;
+        return Critere::pourUniversite($univId);
+    }
+
     public function show($token)
     {
         $lien = LienQuestionnaire::where('token', $token)
-            ->with('enseignant')
+            ->with(['enseignant', 'annexe'])
             ->firstOrFail();
 
         if (! $lien->isActif()) {
             return view('questionnaire.ferme', compact('lien'));
         }
 
-        return view('questionnaire.show', compact('lien'));
+        $criteres = $this->criteresPourLien($lien);
+
+        return view('questionnaire.show', compact('lien', 'criteres'));
     }
 
     public function submit(Request $request, $token)
     {
-        $lien = LienQuestionnaire::where('token', $token)->firstOrFail();
+        $lien = LienQuestionnaire::where('token', $token)
+            ->with('annexe')
+            ->firstOrFail();
 
         if (! $lien->isActif()) {
             return view('questionnaire.ferme', compact('lien'));
         }
 
-        // Valider les scores (un par question)
-        $questions = $lien->questions;
+        $criteres = $this->criteresPourLien($lien);
+
         $rules = [];
-        foreach ($questions as $i => $q) {
+        foreach ($criteres as $i => $c) {
             $rules["scores.$i"] = ['required', 'integer', 'between:1,5'];
         }
         $rules['commentaire'] = ['nullable', 'string', 'max:1000'];
 
         $data = $request->validate($rules);
 
-        // Construire le tableau scores [{label, score}]
         $scores = [];
-        foreach ($questions as $i => $q) {
+        foreach ($criteres as $i => $c) {
             $scores[] = [
-                'label' => $q['label'],
+                'label' => $c->nom,
                 'score' => (int) $data['scores'][$i],
             ];
         }

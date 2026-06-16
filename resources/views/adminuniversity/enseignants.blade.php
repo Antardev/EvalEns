@@ -8,7 +8,7 @@
     <div class="form-head d-flex mb-3 align-items-start">
         <div class="me-auto d-none d-lg-block">
             <h2 class="text-primary font-w600 mb-0">Enseignants</h2>
-            <p class="mb-0">Tous les enseignants inscrits, par annexe</p>
+            <p class="mb-0">Tous les enseignants inscrits dans cette université</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
             <span class="badge badge-success px-3 py-2 fs-13">{{ $total }} enseignant{{ $total !== 1 ? 's' : '' }}</span>
@@ -52,8 +52,8 @@
         </div>
     </div>
 
-    {{-- Résultats groupés par annexe --}}
-    @if($grouped->isEmpty())
+    {{-- Résultats --}}
+    @if($enseignants->isEmpty())
         <div class="card">
             <div class="card-body text-center py-5 text-muted">
                 <i class="lni lni-blackboard fs-1 d-block mb-3"></i>
@@ -61,138 +61,72 @@
             </div>
         </div>
     @else
-        @foreach($annexes as $annexe)
-            @php $list = $grouped->get($annexe->id, collect()); @endphp
-            @if($list->isEmpty()) @continue @endif
-
-            <div class="card mb-3">
-                <div class="card-header border-0 d-flex align-items-center justify-content-between py-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="lni lni-map-marker text-success"></i>
-                        <h5 class="mb-0 font-w600">{{ $annexe->nom }}</h5>
-                        @if($annexe->ville)
-                            <span class="text-muted fs-13">— {{ $annexe->ville }}</span>
-                        @endif
-                    </div>
-                    <span class="badge badge-success">{{ $list->count() }} enseignant{{ $list->count() !== 1 ? 's' : '' }}</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nom</th>
-                                    <th>Email</th>
-                                    <th>Annexe</th>
-                                    <th>Inscrit le</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($list as $enseignant)
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold"
-                                                style="width:32px;height:32px;flex-shrink:0;font-size:12px;background:#2BC155;">
-                                                {{ strtoupper(substr($enseignant->prenom, 0, 1)) }}
-                                            </div>
-                                            <span class="font-w500">{{ $enseignant->prenom }} {{ $enseignant->nom }}</span>
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Annexes</th>
+                                <th>Inscrit le</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($enseignants as $enseignant)
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold"
+                                            style="width:32px;height:32px;flex-shrink:0;font-size:12px;background:#2BC155;">
+                                            {{ strtoupper(substr($enseignant->prenom, 0, 1)) }}
                                         </div>
-                                    </td>
-                                    <td class="text-muted fs-13">{{ $enseignant->email }}</td>
-                                    <td class="fs-13">
-                                        @if($enseignant->annexe)
-
-
-                                              <span class="text-muted"> {{ $enseignant->annexe->ville }}</span>
-
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-muted fs-13">{{ $enseignant->created_at->format('d/m/Y') }}</td>
-                                    <td>
-                                        <button class="btn btn-xs btn-outline-primary me-1"
-                                            data-bs-toggle="modal" data-bs-target="#modalEditerEnseignant"
-                                            data-id="{{ $enseignant->id }}"
-                                            data-prenom="{{ $enseignant->prenom }}"
-                                            data-nom="{{ $enseignant->nom }}"
-                                            data-email="{{ $enseignant->email }}">
-                                            <i class="lni lni-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-xs btn-outline-danger"
-                                            data-bs-toggle="modal" data-bs-target="#modalSupprimerEnseignant"
-                                            data-id="{{ $enseignant->id }}"
-                                            data-nom="{{ $enseignant->prenom }} {{ $enseignant->nom }}">
-                                            <i class="lni lni-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                        <span class="font-w500">{{ $enseignant->prenom }} {{ $enseignant->nom }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted fs-13">{{ $enseignant->email }}</td>
+                                <td class="fs-13">
+                                    @forelse($enseignant->annexes as $annexe)
+                                        <span class="badge badge-success me-1 mb-1">
+                                            <i class="lni lni-map-marker me-1"></i>{{ $annexe->nom }}
+                                            @if($annexe->ville)
+                                                <span class="text-white-50">— {{ $annexe->ville }}</span>
+                                            @endif
+                                        </span>
+                                    @empty
+                                        <span class="text-muted">—</span>
+                                    @endforelse
+                                </td>
+                                <td class="text-muted fs-13">{{ $enseignant->created_at->format('d/m/Y') }}</td>
+                                <td>
+                                    <button class="btn btn-xs btn-outline-primary me-1"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditerEnseignant"
+                                        data-id="{{ $enseignant->id }}"
+                                        data-prenom="{{ $enseignant->prenom }}"
+                                        data-nom="{{ $enseignant->nom }}"
+                                        data-email="{{ $enseignant->email }}">
+                                        <i class="lni lni-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-xs btn-outline-danger"
+                                        data-bs-toggle="modal" data-bs-target="#modalSupprimerEnseignant"
+                                        data-id="{{ $enseignant->id }}"
+                                        data-nom="{{ $enseignant->prenom }} {{ $enseignant->nom }}">
+                                        <i class="lni lni-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        @endforeach
+        </div>
 
-        {{-- Enseignants sans annexe (cas limite) --}}
-        @php $sansAnnexe = $grouped->get('', collect())->merge($grouped->get(null, collect())); @endphp
-        @if($sansAnnexe->isNotEmpty())
-            <div class="card mb-3 border-warning">
-                <div class="card-header border-0 d-flex align-items-center justify-content-between py-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="lni lni-warning text-warning"></i>
-                        <h5 class="mb-0 font-w600">Sans annexe</h5>
-                    </div>
-                    <span class="badge badge-warning">{{ $sansAnnexe->count() }}</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr><th>Nom</th><th>Email</th><th>Annexe</th><th>Inscrit le</th><th>Actions</th></tr>
-                            </thead>
-                            <tbody>
-                                @foreach($sansAnnexe as $enseignant)
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold"
-                                                style="width:32px;height:32px;flex-shrink:0;font-size:12px;background:#2BC155;">
-                                                {{ strtoupper(substr($enseignant->prenom, 0, 1)) }}
-                                            </div>
-                                            <span class="font-w500">{{ $enseignant->prenom }} {{ $enseignant->nom }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-muted fs-13">{{ $enseignant->email }}</td>
-                                    <td class="text-muted fs-13 text-warning">Non assigné</td>
-                                    <td class="text-muted fs-13">{{ $enseignant->created_at->format('d/m/Y') }}</td>
-                                    <td>
-                                        <button class="btn btn-xs btn-outline-primary me-1"
-                                            data-bs-toggle="modal" data-bs-target="#modalEditerEnseignant"
-                                            data-id="{{ $enseignant->id }}"
-                                            data-prenom="{{ $enseignant->prenom }}"
-                                            data-nom="{{ $enseignant->nom }}"
-                                            data-email="{{ $enseignant->email }}">
-                                            <i class="lni lni-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-xs btn-outline-danger"
-                                            data-bs-toggle="modal" data-bs-target="#modalSupprimerEnseignant"
-                                            data-id="{{ $enseignant->id }}"
-                                            data-nom="{{ $enseignant->prenom }} {{ $enseignant->nom }}">
-                                            <i class="lni lni-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        @endif
+        <div class="mt-3 d-flex justify-content-center">
+            {{ $enseignants->links() }}
+        </div>
     @endif
 
 </div>
@@ -220,15 +154,6 @@
                         <div class="col-12">
                             <label class="form-label fw-semibold">Email institutionnel <span class="text-danger">*</span></label>
                             <input type="email" name="email" class="form-control" placeholder="prenom.nom@univ.fr" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-semibold">Annexe</label>
-                            <select name="annexe_id" class="form-control">
-                                <option value="">— Sélectionner une annexe —</option>
-                                @foreach($annexes as $a)
-                                    <option value="{{ $a->id }}">{{ $a->nom }}{{ $a->ville ? ' — '.$a->ville : '' }}</option>
-                                @endforeach
-                            </select>
                         </div>
                     </div>
                 </div>

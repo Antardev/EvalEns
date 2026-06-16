@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Annexe;
+use App\Models\LienQuestionnaire;
+use App\Models\ReponseQuestionnaire;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +20,42 @@ class AdminUniversityController extends Controller
 
     public function dashboard()
     {
-        return view('adminuniversity.dashboard');
+        $univId = $this->universityId();
+
+        $nbEnseignants = \App\Models\User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+            ->where('role', 'enseignant')->count();
+
+        $nbAnnexes = \App\Models\Annexe::where('university_id', $univId)->count();
+
+        $nbEvaluations = \App\Models\ReponseQuestionnaire::whereHas('lien.annexe', fn($q) => $q->where('university_id', $univId))->count();
+
+        $nbLiens = \App\Models\LienQuestionnaire::whereHas('annexe', fn($q) => $q->where('university_id', $univId))->count();
+
+        // Moyennes par annexe pour le graphe
+        $annexes = \App\Models\Annexe::where('university_id', $univId)->orderBy('nom')->get();
+
+        $statsParAnnexe = $annexes->map(function ($annexe) {
+            $reponses = \App\Models\ReponseQuestionnaire::whereHas('lien', fn($q) => $q->where('annexe_id', $annexe->id))->get();
+            $scores   = $reponses->flatMap(fn($r) => collect($r->scores)->pluck('score'));
+            return [
+                'nom'     => $annexe->nom,
+                'moyenne' => $scores->isNotEmpty() ? round($scores->avg() * 20) : 0,
+                'count'   => $reponses->count(),
+            ];
+        });
+
+        // Enseignants récents
+        $enseignantsRecents = \App\Models\User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+            ->where('role', 'enseignant')
+            ->with('annexes')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return view('adminuniversity.dashboard', compact(
+            'nbEnseignants', 'nbAnnexes', 'nbEvaluations', 'nbLiens',
+            'statsParAnnexe', 'enseignantsRecents'
+        ));
     }
 
     public function etudiants(Request $request)
@@ -79,11 +116,13 @@ class AdminUniversityController extends Controller
 
     public function enseignants(Request $request)
     {
-        $univId = $this->universityId();
+        $univId  = $this->universityId();
         $annexes = Annexe::where('university_id', $univId)->orderBy('nom')->get();
 
-        $query = User::where('university_id', $univId)->where('role', 'enseignant')
-            ->with('annexe')->latest();
+        $query = User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+            ->where('role', 'enseignant')
+            ->with('annexes')
+            ->latest();
 
         if ($search = $request->input('search')) {
             $query->where(fn($q) => $q->where('prenom', 'like', "%$search%")
@@ -92,13 +131,14 @@ class AdminUniversityController extends Controller
         }
 
         if ($annexeId = $request->input('annexe_id')) {
-            $query->where('annexe_id', $annexeId);
+            $query->whereHas('annexes', fn($q) => $q->where('annexes.id', $annexeId));
         }
 
-        $grouped = $query->get()->groupBy('annexe_id');
-        $total   = User::where('university_id', $univId)->where('role', 'enseignant')->count();
+        $enseignants = $query->paginate(30)->withQueryString();
+        $total       = User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+                           ->where('role', 'enseignant')->count();
 
-        return view('adminuniversity.enseignants', compact('annexes', 'grouped', 'total'));
+        return view('adminuniversity.enseignants', compact('annexes', 'enseignants', 'total'));
     }
 
     public function creerEnseignant(Request $request)
@@ -180,13 +220,48 @@ class AdminUniversityController extends Controller
 
     public function questionnaires()
     {
-        return view('adminuniversity.questionnaires');
+        $univId   = $this->universityId();
+        $criteres = \App\Models\Critere::where(function ($q) use ($univId) {
+                        $q->where('university_id', $univId)
+                          ->orWhereNull('university_id');
+                    })
+                    ->orderBy('university_id', 'desc') // université-spécifiques en premier
+                    ->orderBy('ordre')
+                    ->get();
+
+        // Indique si l'université a ses propres critères ou hérite des globaux
+        $hasOwn = \App\Models\Critere::where('university_id', $univId)->exists();
+
+        return view('adminuniversity.questionnaires', compact('criteres', 'hasOwn'));
     }
 
     public function saveQuestionnaire(Request $request)
     {
-        // TODO: save questionnaire configuration
-        return redirect()->route('adminuniversity.questionnaires')->with('success', 'Questionnaire enregistré.');
+        $univId = $this->universityId();
+
+        $request->validate([
+            'criteres'              => ['required', 'array', 'min:1'],
+            'criteres.*.nom'        => ['required', 'string', 'max:200'],
+            'criteres.*.description'=> ['nullable', 'string', 'max:500'],
+            'criteres.*.poids'      => ['required', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        // Supprimer les anciens critères de cette université, puis recréer
+        \App\Models\Critere::where('university_id', $univId)->delete();
+
+        foreach ($request->input('criteres') as $i => $data) {
+            \App\Models\Critere::create([
+                'university_id' => $univId,
+                'nom'           => $data['nom'],
+                'description'   => $data['description'] ?? '',
+                'poids'         => (int) $data['poids'],
+                'ordre'         => $i + 1,
+                'actif'         => isset($data['actif']),
+            ]);
+        }
+
+        return redirect()->route('adminuniversity.questionnaires')
+            ->with('success', 'Configuration des critères enregistrée avec succès.');
     }
 
     /* ═══════════════════════════════════════════════

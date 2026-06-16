@@ -153,24 +153,18 @@ Route::middleware(['auth', EnsureIsGestionnaire::class])
     ->controller(GestionnaireController::class)
     ->group(function () {
         Route::get('/',            'dashboard')->name('dashboard');
-        Route::get('/etudiants',   'etudiants')->name('etudiants');
         Route::get('/enseignants', 'enseignants')->name('enseignants');
 
-        // Emplois du temps
-        Route::get('/emplois-du-temps',                      'emploisDuTemps')->name('emplois-du-temps');
-        Route::post('/emplois-du-temps',                     'creerEmploiDuTemps')->name('emplois-du-temps.creer');
-        Route::get('/emplois-du-temps/{id}',                 'voirEmploiDuTemps')->name('emplois-du-temps.voir');
-        Route::post('/emplois-du-temps/{id}/publier',        'publierEmploiDuTemps')->name('emplois-du-temps.publier');
-        Route::delete('/emplois-du-temps/{id}',              'supprimerEmploiDuTemps')->name('emplois-du-temps.supprimer');
-        Route::post('/emplois-du-temps/{id}/creneaux',       'creerCreneau')->name('emplois-du-temps.creneaux.creer');
-        Route::delete('/creneaux/{id}',                      'supprimerCreneau')->name('creneaux.supprimer');
-
         // Liens questionnaires
-        Route::get('/liens',               'liens')->name('liens');
-        Route::post('/liens',              'creerLien')->name('liens.creer');
-        Route::post('/liens/{id}/fermer',  'fermerLien')->name('liens.fermer');
-        Route::delete('/liens/{id}',       'supprimerLien')->name('liens.supprimer');
-        Route::get('/liens/{id}/reponses', 'voirReponses')->name('liens.reponses');
+        Route::get('/liens',                    'liens')->name('liens');
+        Route::post('/liens',                   'creerLien')->name('liens.creer');
+        Route::post('/liens/{id}/fermer',       'fermerLien')->name('liens.fermer');
+        Route::post('/liens/{id}/rafraichir',   'rafraichirLien')->name('liens.rafraichir');
+        Route::delete('/liens/{id}',            'supprimerLien')->name('liens.supprimer');
+        Route::get('/liens/{id}/reponses',      'voirReponses')->name('liens.reponses');
+
+        Route::get('/questionnaires',  'questionnaires')->name('questionnaires');
+        Route::post('/questionnaires', 'saveQuestionnaire')->name('questionnaires.save');
     });
 
 /*
