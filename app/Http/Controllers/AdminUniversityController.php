@@ -58,62 +58,6 @@ class AdminUniversityController extends Controller
         ));
     }
 
-    public function etudiants(Request $request)
-    {
-        $univId = $this->universityId();
-        $annexes = Annexe::where('university_id', $univId)->orderBy('nom')->get();
-
-        $query = User::where('university_id', $univId)->where('role', 'etudiant')
-            ->with('annexe')->latest();
-
-        if ($search = $request->input('search')) {
-            $query->where(fn($q) => $q->where('prenom', 'like', "%$search%")
-                                      ->orWhere('nom', 'like', "%$search%")
-                                      ->orWhere('email', 'like', "%$search%"));
-        }
-
-        if ($annexeId = $request->input('annexe_id')) {
-            $query->where('annexe_id', $annexeId);
-        }
-
-        $grouped = $query->get()->groupBy('annexe_id');
-        $total   = User::where('university_id', $univId)->where('role', 'etudiant')->count();
-
-        return view('adminuniversity.etudiants', compact('annexes', 'grouped', 'total'));
-    }
-
-    public function creerEtudiant(Request $request)
-    {
-        $request->validate([
-            'nom'    => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
-            'email'  => 'required|email|unique:users,email',
-        ]);
-        return redirect()->route('adminuniversity.etudiants')->with('success', 'Étudiant ajouté avec succès.');
-    }
-
-    public function modifierEtudiant(Request $request, $id)
-    {
-        $request->validate([
-            'nom'    => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
-            'email'  => 'required|email',
-        ]);
-        return redirect()->route('adminuniversity.etudiants')->with('success', 'Étudiant mis à jour.');
-    }
-
-    public function supprimerEtudiant($id)
-    {
-        return redirect()->route('adminuniversity.etudiants')->with('success', 'Étudiant supprimé.');
-    }
-
-    public function importerEtudiants(Request $request)
-    {
-        $request->validate(['fichier_csv' => 'required|file|mimes:csv,txt|max:2048']);
-        // TODO: parse and import CSV
-        return redirect()->route('adminuniversity.etudiants')->with('success', 'Import CSV effectué avec succès.');
-    }
-
     public function enseignants(Request $request)
     {
         $univId  = $this->universityId();
@@ -164,6 +108,64 @@ class AdminUniversityController extends Controller
     public function supprimerEnseignant($id)
     {
         return redirect()->route('adminuniversity.enseignants')->with('success', 'Enseignant supprimé.');
+    }
+
+    public function enseignantStatistiques($id)
+    {
+        $univId = $this->universityId();
+
+        $enseignant = User::where('role', 'enseignant')
+            ->whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+            ->with('annexes')
+            ->findOrFail($id);
+
+        $liens = LienQuestionnaire::where('enseignant_id', $id)
+            ->whereHas('annexe', fn($q) => $q->where('university_id', $univId))
+            ->with(['reponses', 'annexe'])
+            ->latest()
+            ->get();
+
+        $toutesReponses = $liens->flatMap->reponses;
+        $totalReponses  = $toutesReponses->count();
+        $totalLiens     = $liens->count();
+
+        $moyenneGlobale = $totalReponses > 0
+            ? round($toutesReponses->avg(fn($r) => $r->moyenneGlobale()), 2)
+            : null;
+
+        $scoresParCritere = [];
+        foreach ($toutesReponses as $reponse) {
+            foreach (($reponse->scores ?? []) as $item) {
+                $label = $item['label'] ?? '?';
+                $scoresParCritere[$label][] = $item['score'] ?? 0;
+            }
+        }
+        $moyennesParCritere = collect($scoresParCritere)
+            ->map(fn($s) => round(array_sum($s) / count($s), 2));
+
+        $commentaires = $toutesReponses
+            ->filter(fn($r) => !empty($r->commentaire))
+            ->sortByDesc('soumis_at')
+            ->take(10);
+
+        $statsParLien = $liens->map(function ($lien) {
+            $count = $lien->reponses->count();
+            return [
+                'titre'      => $lien->titre ?: ($lien->matiere ?? 'Sans titre'),
+                'classe'     => $lien->classe ?? '—',
+                'annexe'     => $lien->annexe->nom ?? '—',
+                'statut'     => $lien->statut,
+                'expire_at'  => $lien->expire_at,
+                'reponses'   => $count,
+                'moyenne'    => $count > 0 ? round($lien->reponses->avg(fn($r) => $r->moyenneGlobale()), 2) : null,
+                'created_at' => $lien->created_at,
+            ];
+        });
+
+        return view('adminuniversity.enseignant-statistiques', compact(
+            'enseignant', 'totalReponses', 'totalLiens', 'moyenneGlobale',
+            'moyennesParCritere', 'commentaires', 'statsParLien'
+        ));
     }
 
     public function periodes()
@@ -363,7 +365,7 @@ class AdminUniversityController extends Controller
 
         User::where('annexe_id', $annexe->id)
             ->where('role', 'gestionnaire')
-            ->update(['annexe_id' => null, 'role' => 'etudiant']);
+            ->update(['annexe_id' => null]);
 
         return redirect()->route('adminuniversity.annexes')
             ->with('success', "Le gestionnaire de l'annexe « {$annexe->nom} » a été retiré.");

@@ -101,6 +101,10 @@
                                 </td>
                                 <td class="text-muted fs-13">{{ $enseignant->created_at->format('d/m/Y') }}</td>
                                 <td>
+                                    <a href="{{ route('adminuniversity.enseignants.statistiques', $enseignant->id) }}"
+                                        class="btn btn-xs btn-outline-info me-1" title="Statistiques d'évaluation">
+                                        <i class="lni lni-bar-chart"></i>
+                                    </a>
                                     <button class="btn btn-xs btn-outline-primary me-1"
                                         data-bs-toggle="modal" data-bs-target="#modalEditerEnseignant"
                                         data-id="{{ $enseignant->id }}"

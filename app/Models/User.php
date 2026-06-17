@@ -16,7 +16,7 @@ class User extends Authenticatable
     protected $fillable = [
         'prenom', 'nom', 'name',
         'email', 'role', 'password',
-        'university_id', 'annexe_id',
+        'university_id', 'annexe_id', 'avatar',
     ];
 
     protected $hidden = [
@@ -47,6 +47,11 @@ class User extends Authenticatable
     public function annexes(): BelongsToMany
     {
         return $this->belongsToMany(Annexe::class, 'enseignant_annexes');
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar ? asset('storage/' . $this->avatar) : null;
     }
 
     public function isSuperAdmin(): bool    { return $this->role === 'superadmin'; }

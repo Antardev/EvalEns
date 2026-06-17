@@ -47,6 +47,7 @@ Route::middleware('auth')
         Route::get('/',                'show')->name('show');
         Route::put('/info',            'updateInfo')->name('update-info');
         Route::put('/password',        'updatePassword')->name('update-password');
+        Route::post('/avatar',         'updateAvatar')->name('update-avatar');
     });
 
 /*
@@ -108,13 +109,8 @@ Route::middleware(['auth', 'director.onboarding'])
     ->group(function () {
         Route::get('/', 'dashboard')->name('dashboard');
 
-        Route::get('/etudiants',         'etudiants')->name('etudiants');
-        Route::post('/etudiants',        'creerEtudiant')->name('etudiants.creer');
-        Route::put('/etudiants/{id}',    'modifierEtudiant')->name('etudiants.modifier');
-        Route::delete('/etudiants/{id}', 'supprimerEtudiant')->name('etudiants.supprimer');
-        Route::post('/etudiants/import', 'importerEtudiants')->name('etudiants.importer');
-
-        Route::get('/enseignants',         'enseignants')->name('enseignants');
+        Route::get('/enseignants',                    'enseignants')->name('enseignants');
+        Route::get('/enseignants/{id}/statistiques', 'enseignantStatistiques')->name('enseignants.statistiques');
         Route::post('/enseignants',        'creerEnseignant')->name('enseignants.creer');
         Route::put('/enseignants/{id}',    'modifierEnseignant')->name('enseignants.modifier');
         Route::delete('/enseignants/{id}', 'supprimerEnseignant')->name('enseignants.supprimer');

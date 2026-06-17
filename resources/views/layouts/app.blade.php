@@ -101,7 +101,15 @@
                                         <span>{{ auth()->user()->name ?? 'Utilisateur' }}</span>
                                         <small class="text-end fs-12 text-primary">{{ $roleLabel }}</small>
                                     </div>
-                                    <img src="{{ asset('dashboard/images/profile/pic1.jpg') }}" width="20" alt="">
+                                    @if(auth()->user()->avatarUrl())
+                                        <img src="{{ auth()->user()->avatarUrl() }}" width="32" height="32" alt=""
+                                            class="rounded-circle" style="object-fit:cover;">
+                                    @else
+                                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold"
+                                            style="width:32px;height:32px;font-size:13px;background:#2F4CDD;flex-shrink:0;">
+                                            {{ strtoupper(substr(auth()->user()->prenom ?? auth()->user()->name, 0, 1)) }}
+                                        </div>
+                                    @endif
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a href="{{ route('profile.show') }}" class="dropdown-item ai-icon">
@@ -144,12 +152,6 @@
                                 <span class="nav-text">Tableau de bord</span>
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('adminuniversity.etudiants*') ? 'mm-active' : '' }}">
-                            <a href="{{ route('adminuniversity.etudiants') }}" class="ai-icon">
-                                <i class="flaticon-381-user-9"></i>
-                                <span class="nav-text">Étudiants</span>
-                            </a>
-                        </li>
                         <li class="{{ request()->routeIs('adminuniversity.enseignants*') ? 'mm-active' : '' }}">
                             <a href="{{ route('adminuniversity.enseignants') }}" class="ai-icon">
                                 <i class="flaticon-381-user-9"></i>
@@ -160,18 +162,6 @@
                             <a href="{{ route('adminuniversity.annexes') }}" class="ai-icon">
                                 <i class="flaticon-381-map-2"></i>
                                 <span class="nav-text">Annexes</span>
-                            </a>
-                        </li>
-                        <li class="{{ request()->routeIs('adminuniversity.periodes*') ? 'mm-active' : '' }}">
-                            <a href="{{ route('adminuniversity.periodes') }}" class="ai-icon">
-                                <i class="flaticon-381-controls-3"></i>
-                                <span class="nav-text">Périodes d'évaluation</span>
-                            </a>
-                        </li>
-                        <li class="{{ request()->routeIs('adminuniversity.formations*') ? 'mm-active' : '' }}">
-                            <a href="{{ route('adminuniversity.formations') }}" class="ai-icon">
-                                <i class="flaticon-381-layer-1"></i>
-                                <span class="nav-text">Formations &amp; UE</span>
                             </a>
                         </li>
                         <li class="{{ request()->routeIs('adminuniversity.questionnaires*') ? 'mm-active' : '' }}">

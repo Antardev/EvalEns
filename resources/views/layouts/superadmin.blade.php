@@ -69,7 +69,15 @@
                                         <span>Bonjour, <strong>{{ auth()->user()->name ?? 'SuperAdmin' }}</strong></span>
                                         <small class="text-end fs-12 text-primary">Administrateur Système</small>
                                     </div>
-                                    <img src="{{ asset('dashboard/images/profile/pic1.jpg') }}" width="20" alt="">
+                                    @if(auth()->user()->avatarUrl())
+                                        <img src="{{ auth()->user()->avatarUrl() }}" width="32" height="32" alt=""
+                                            class="rounded-circle" style="object-fit:cover;">
+                                    @else
+                                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold"
+                                            style="width:32px;height:32px;font-size:13px;background:#2F4CDD;flex-shrink:0;">
+                                            {{ strtoupper(substr(auth()->user()->prenom ?? auth()->user()->name, 0, 1)) }}
+                                        </div>
+                                    @endif
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <form method="POST" action="{{ route('logout') }}">
