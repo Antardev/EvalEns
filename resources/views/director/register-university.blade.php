@@ -10,7 +10,7 @@
                 <div class="auth-form">
 
                     <div class="text-center mb-4">
-                        <img src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:44px;">
+                        <img src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:44px;">
                     </div>
 
                     <h4 class="text-center mb-1">Inscrire mon université</h4>

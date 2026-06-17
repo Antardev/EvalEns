@@ -7,11 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ÉvalENS') — ÉvalENS</title>
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('dashboard/images/favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('dashboard/images/Evalensico.png') }}">
     <link href="{{ asset('dashboard/vendor/jqvmap/css/jqvmap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('dashboard/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
     <link href="{{ asset('dashboard/css/style.css') }}" rel="stylesheet">
     <link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet">
+    <style>
+        /* Sidebar étendue : logo complet visible, icône masquée */
+        .nav-header .logo-abbr { display: none !important; }
+        .nav-header .brand-title { display: block !important; }
+        /* Sidebar réduite (menu-toggle) : icône visible, logo complet masqué */
+        .menu-toggle .nav-header .logo-abbr { display: block !important; }
+        .menu-toggle .nav-header .brand-title { display: none !important; }
+    </style>
     @stack('styles')
 </head>
 
@@ -62,9 +70,9 @@
         {{-- Nav Header --}}
         <div class="nav-header">
             <a href="{{ $homeRoute }}" class="brand-logo">
-                <img class="logo-abbr" src="{{ asset('dashboard/images/evalens-icon.svg') }}" alt="ÉvalENS" style="height:36px;">
-                <img class="logo-compact" src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:36px;">
-                <img class="brand-title" src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:36px;">
+                <img class="logo-abbr" src="{{ asset('dashboard/images/Evalensico.png') }}" alt="ÉvalENS" style="height:70px; width:100%;">
+                {{-- <img class="logo-compact" src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:52px; max-width:160px; object-fit:contain;"> --}}
+                <img class="brand-title" src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:160px; max-width:160px; object-fit:contain;">
             </a>
             <div class="nav-control">
                 <div class="hamburger">

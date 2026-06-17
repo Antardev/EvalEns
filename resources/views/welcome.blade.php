@@ -12,6 +12,8 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Google Fonts -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('dashboard/images/Evalensico.png') }}">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -445,7 +447,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="/">
-            Éval<span>ENS</span>
+            <img src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:80px; width:150px">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

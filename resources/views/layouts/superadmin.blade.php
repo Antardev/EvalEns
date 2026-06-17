@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SuperAdmin') — ÉvalENS</title>
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('dashboard/images/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('dashboard/images/Evalensico.png') }}">
     <link href="{{ asset('dashboard/vendor/jqvmap/css/jqvmap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('dashboard/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
     <link href="{{ asset('dashboard/css/style.css') }}" rel="stylesheet">
@@ -31,8 +31,8 @@
         <div class="nav-header">
             <a href="{{ route('superadmin.dashboard') }}" class="brand-logo">
                 <img class="logo-abbr" src="{{ asset('dashboard/images/evalens-icon.svg') }}" alt="ÉvalENS" style="height:36px;">
-                <img class="logo-compact" src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:36px;">
-                <img class="brand-title" src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:36px;">
+                <img class="logo-compact" src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:36px;">
+                <img class="brand-title" src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:36px;">
             </a>
             <div class="nav-control">
                 <div class="hamburger">

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Questionnaire') — ÉvalENS</title>
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('dashboard/images/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('dashboard/images/Evalensico.png') }}">
     <link href="{{ asset('dashboard/css/style.css') }}" rel="stylesheet">
     <style>
         body { background: #f4f6fb; min-height: 100vh; }
@@ -34,7 +34,7 @@
 
 <div class="q-header">
     <div class="container">
-        <img src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS">
+        <img src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS">
     </div>
 </div>
 

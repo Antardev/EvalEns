@@ -10,8 +10,8 @@
                 <div class="auth-form">
 
                     {{-- Logo --}}
-                    <div class="text-center mb-4">
-                        <img src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:44px;">
+                    <div class="d-flex justify-content-center align-items-center mb-2">
+                        <img src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:100px; max-width:100%; ">
                     </div>
 
                     <h4 class="text-center mb-1">Connexion</h4>
@@ -29,7 +29,7 @@
 
                     <form method="POST" action="{{ route('login') }}">
                         @csrf
-                    
+
                         <div class="form-group mb-3">
                             <label class="mb-1"><strong>Adresse e-mail</strong></label>
                             <input type="email" name="email"

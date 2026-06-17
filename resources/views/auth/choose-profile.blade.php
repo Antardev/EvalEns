@@ -31,8 +31,8 @@
 <div class="col-xl-8 col-lg-9 col-md-11 mx-auto">
 
     <div class="text-center mb-5">
-        <img src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:48px;">
-        <h3 class="mt-4 mb-1 font-w600">Choisissez votre profil</h3>
+        <img src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:120px; width:50%; ">
+        <h3 class="mt-1 mb-1 font-w600">Choisissez votre profil</h3>
         <p class="text-muted fs-14">pour commencer votre inscription</p>
     </div>
 

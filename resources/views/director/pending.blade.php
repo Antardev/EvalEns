@@ -12,7 +12,7 @@
 @section('content')
 <div class="col-xl-5 col-md-7 col-sm-10 mx-auto">
     <div class="text-center mb-4">
-        <img src="{{ asset('dashboard/images/evalens-logo.svg') }}" alt="ÉvalENS" style="height:44px;">
+        <img src="{{ asset('dashboard/evalens-logo.png') }}" alt="ÉvalENS" style="height:44px;">
     </div>
 
     @if($university->isEnAttente())
