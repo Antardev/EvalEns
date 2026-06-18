@@ -55,6 +55,8 @@ class FortifyServiceProvider extends ServiceProvider
         // Vues personnalisées
         Fortify::loginView(fn () => view('auth.login'));
         Fortify::registerView(fn () => view('auth.choose-profile'));
+        Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));
+        Fortify::resetPasswordView(fn ($request) => view('auth.reset-password', ['request' => $request]));
 
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());

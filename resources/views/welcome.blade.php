@@ -504,7 +504,7 @@
                 </div>
             </div>
             <div class="col-lg-5 d-none d-lg-block">
-                <img src="https://placehold.co/500x400/eef2ff/4361ee?text=Illustration" alt="Illustration" class="img-fluid" style="border-radius: 20px;">
+                <img src="{{ asset('dashboard/images/evaluation.jpg') }}" alt="Évaluation" class="img-fluid" style="border-radius: 20px;">
             </div>
         </div>
     </div>
