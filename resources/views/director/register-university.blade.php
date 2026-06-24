@@ -35,21 +35,12 @@
                         {{-- Université + Acronyme --}}
                         <div class="row g-3 mb-3">
                             <div class="col-8">
-                                <label class="mb-1"><strong>Université <span class="text-danger">*</span></strong></label>
-                                <select id="select-universite" name="nom"
+                                <label class="mb-1"><strong>Nom de l'université <span class="text-danger">*</span></strong></label>
+                                <input type="text" name="nom"
                                     class="form-control @error('nom') is-invalid @enderror"
-                                    required>
-                                    <option value="" disabled {{ old('nom') ? '' : 'selected' }}>
-                                        — Sélectionnez —
-                                    </option>
-                                    @foreach($universities as $univ)
-                                        <option value="{{ $univ->nom }}"
-                                                data-acronyme="{{ $univ->acronyme ?? '' }}"
-                                                {{ old('nom') === $univ->nom ? 'selected' : '' }}>
-                                            {{ $univ->nom }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                    value="{{ old('nom') }}"
+                                    placeholder="Ex : Université d'Abomey-Calavi"
+                                    required autofocus>
                                 @error('nom')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -57,13 +48,11 @@
 
                             <div class="col-4">
                                 <label class="mb-1"><strong>Acronyme</strong></label>
-                                <input type="text" id="input-acronyme" name="acronyme"
+                                <input type="text" name="acronyme"
                                     class="form-control @error('acronyme') is-invalid @enderror"
                                     value="{{ old('acronyme') }}"
-                                    placeholder="—"
-                                    maxlength="20"
-                                    readonly
-                                    style="background:#f4f7ff; cursor:default;">
+                                    placeholder="Ex : UAC"
+                                    maxlength="20">
                                 @error('acronyme')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -126,23 +115,3 @@
 </div>
 @endsection
 
-@push('scripts')
-<script>
-(function () {
-    const sel   = document.getElementById('select-universite');
-    const acro  = document.getElementById('input-acronyme');
-
-    if (!sel || !acro) return;
-
-    function syncAcronyme() {
-        const opt = sel.options[sel.selectedIndex];
-        acro.value = (opt && opt.dataset.acronyme) ? opt.dataset.acronyme : '';
-    }
-
-    sel.addEventListener('change', syncAcronyme);
-
-    /* Restauration après retour de validation (old()) */
-    if (sel.value) { syncAcronyme(); }
-})();
-</script>
-@endpush

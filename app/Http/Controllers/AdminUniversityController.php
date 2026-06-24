@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Annexe;
 use App\Models\LienQuestionnaire;
 use App\Models\ReponseQuestionnaire;
@@ -344,7 +345,7 @@ class AdminUniversityController extends Controller
             'password'  => ['required', 'string', 'min:8'],
         ]);
 
-        User::create([
+        $gestionnaire = User::create([
             'prenom'        => $data['prenom'],
             'nom'           => $data['nom'],
             'name'          => $data['prenom'] . ' ' . $data['nom'],
@@ -354,6 +355,8 @@ class AdminUniversityController extends Controller
             'university_id' => $this->universityId(),
             'annexe_id'     => $annexe->id,
         ]);
+
+        AuditLog::write('gestionnaire_cree', "Gestionnaire « {$gestionnaire->name} » créé pour l'annexe « {$annexe->nom} ».", 'User', $gestionnaire->id);
 
         return redirect()->route('adminuniversity.annexes')
             ->with('success', "Le gestionnaire a été créé pour l'annexe « {$annexe->nom} ».");
@@ -366,6 +369,8 @@ class AdminUniversityController extends Controller
         User::where('annexe_id', $annexe->id)
             ->where('role', 'gestionnaire')
             ->update(['annexe_id' => null]);
+
+        AuditLog::write('gestionnaire_supprime', "Gestionnaire retiré de l'annexe « {$annexe->nom} ».", 'Annexe', $annexe->id, 'warning');
 
         return redirect()->route('adminuniversity.annexes')
             ->with('success', "Le gestionnaire de l'annexe « {$annexe->nom} » a été retiré.");

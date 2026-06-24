@@ -60,7 +60,10 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                                     </svg>
-                                    <span class="badge light text-white bg-primary rounded-pill ms-1">3</span>
+                                    @php $nbAttente = \App\Models\University::where('statut','en_attente')->count(); @endphp
+                                    @if($nbAttente > 0)
+                                    <span class="badge light text-white bg-primary rounded-pill ms-1">{{ $nbAttente }}</span>
+                                    @endif
                                 </a>
                             </li>
                             <li class="nav-item dropdown header-profile">
@@ -115,7 +118,9 @@
                         <a class="has-arrow ai-icon" href="javascript:void(0)" aria-expanded="false">
                             <i class="flaticon-381-user-9"></i>
                             <span class="nav-text">Inscriptions</span>
-                            <span class="badge badge-xs badge-warning ms-2">3</span>
+                            @if(isset($nbAttente) && $nbAttente > 0)
+                            <span class="badge badge-xs badge-warning ms-2">{{ $nbAttente }}</span>
+                            @endif
                         </a>
                         <ul aria-expanded="false">
                             <li><a href="{{ route('superadmin.inscriptions') }}" class="{{ request()->routeIs('superadmin.inscriptions') ? 'mm-active' : '' }}">Demandes en attente</a></li>
@@ -148,13 +153,6 @@
                         <a href="{{ route('superadmin.statistiques') }}" class="ai-icon">
                             <i class="flaticon-381-internet"></i>
                             <span class="nav-text">Statistiques</span>
-                        </a>
-                    </li>
-
-                    <li class="{{ request()->routeIs('superadmin.rapports*') ? 'mm-active' : '' }}">
-                        <a href="{{ route('superadmin.rapports') }}" class="ai-icon">
-                            <i class="flaticon-381-notepad"></i>
-                            <span class="nav-text">Rapports PDF</span>
                         </a>
                     </li>
 

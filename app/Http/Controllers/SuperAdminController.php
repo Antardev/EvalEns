@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\University;
 use App\Models\UniversityReference;
+use App\Models\ReponseQuestionnaire;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -12,8 +15,64 @@ class SuperAdminController extends Controller
 {
     public function dashboard()
     {
-        $enAttente = University::where('statut', 'en_attente')->count();
-        return view('SuperAdmin.dashboard', compact('enAttente'));
+        // KPIs
+        $nbUniversites  = University::where('statut', 'active')->count();
+        $nbUtilisateurs = User::whereNot('role', 'superadmin')->count();
+        $nbEvaluations  = ReponseQuestionnaire::count();
+        $enAttente      = University::where('statut', 'en_attente')->count();
+
+        // Demandes récentes
+        $demandesRecentes = University::with('directeur')
+            ->where('statut', 'en_attente')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // Évaluations par mois (6 derniers mois)
+        $mois6 = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $d = now()->subMonths($i);
+            $mois6->push([
+                'label' => ucfirst($d->locale('fr')->isoFormat('MMMM')),
+                'count' => ReponseQuestionnaire::whereYear('soumis_at', $d->year)
+                               ->whereMonth('soumis_at', $d->month)->count(),
+            ]);
+        }
+
+        // Évaluations par mois (12 derniers mois)
+        $mois12 = collect();
+        for ($i = 11; $i >= 0; $i--) {
+            $d = now()->subMonths($i);
+            $mois12->push([
+                'label' => ucfirst($d->locale('fr')->isoFormat('MMM')),
+                'count' => ReponseQuestionnaire::whereYear('soumis_at', $d->year)
+                               ->whereMonth('soumis_at', $d->month)->count(),
+            ]);
+        }
+
+        // Top 5 universités par évaluations
+        $topUniversites = University::where('statut', 'active')
+            ->get()
+            ->map(fn($u) => [
+                'nom'   => $u->acronyme ?? $u->nom,
+                'count' => ReponseQuestionnaire::whereHas('lien.annexe',
+                    fn($q) => $q->where('university_id', $u->id))->count(),
+            ])
+            ->sortByDesc('count')
+            ->take(5)
+            ->values();
+
+        // Activité récente : dernières inscriptions traitées
+        $activiteRecente = University::with(['directeur', 'validateur'])
+            ->whereIn('statut', ['active', 'rejetee'])
+            ->latest('validee_at')
+            ->take(5)
+            ->get();
+
+        return view('SuperAdmin.dashboard', compact(
+            'nbUniversites', 'nbUtilisateurs', 'nbEvaluations', 'enAttente',
+            'demandesRecentes', 'mois6', 'mois12', 'topUniversites', 'activiteRecente'
+        ));
     }
 
     public function inscriptions()
@@ -54,6 +113,8 @@ class SuperAdminController extends Controller
         // Lier le directeur à son université
         $university->directeur->update(['university_id' => $university->id]);
 
+        AuditLog::write('inscription_approuvee', "Université « {$university->nom} » approuvée.", 'University', $university->id);
+
         return redirect()->route('superadmin.inscriptions')
             ->with('success', "L'université « {$university->nom} » a été approuvée.");
     }
@@ -69,6 +130,8 @@ class SuperAdminController extends Controller
             'validee_at'  => now(),
             'validee_par' => Auth::id(),
         ]);
+
+        AuditLog::write('inscription_rejetee', "Université « {$university->nom} » rejetée. Motif : {$request->motif}", 'University', $university->id, 'warning');
 
         return redirect()->route('superadmin.inscriptions')
             ->with('success', "La demande de « {$university->nom} » a été rejetée.");
@@ -177,25 +240,34 @@ class SuperAdminController extends Controller
         return view('SuperAdmin.statistiques');
     }
 
-    public function rapports()
+    public function logs(Request $request)
     {
-        return view('SuperAdmin.rapports');
-    }
+        $query = \App\Models\AuditLog::with('user')->latest();
 
-    public function exporterRapport(Request $request)
-    {
-        $request->validate([
-            'type'       => 'required|in:global,universite,enseignant',
-            'date_debut' => 'required|date',
-            'date_fin'   => 'required|date|after_or_equal:date_debut',
-        ]);
-        // TODO: generate PDF using DomPDF
-        return redirect()->route('superadmin.rapports')
-            ->with('success', 'Rapport généré avec succès.');
-    }
+        if ($search = $request->input('search')) {
+            $query->whereHas('user', fn($q) => $q->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+                ->orWhere('prenom', 'like', "%$search%")
+                ->orWhere('nom', 'like', "%$search%")
+            );
+        }
+        if ($action = $request->input('action')) {
+            $query->where('action', $action);
+        }
+        if ($niveau = $request->input('niveau')) {
+            $query->where('niveau', $niveau);
+        }
+        if ($debut = $request->input('date_debut')) {
+            $query->whereDate('created_at', '>=', $debut);
+        }
+        if ($fin = $request->input('date_fin')) {
+            $query->whereDate('created_at', '<=', $fin);
+        }
 
-    public function logs()
-    {
-        return view('SuperAdmin.logs');
+        $logs   = $query->paginate(20)->withQueryString();
+        $total  = \App\Models\AuditLog::count();
+        $actions = \App\Models\AuditLog::distinct()->pluck('action')->sort()->values();
+
+        return view('SuperAdmin.logs', compact('logs', 'total', 'actions'));
     }
 }

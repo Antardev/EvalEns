@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Critere;
 use App\Models\LienQuestionnaire;
 use App\Models\ReponseQuestionnaire;
@@ -66,6 +67,13 @@ class QuestionnairePublicController extends Controller
             'commentaire'           => $data['commentaire'] ?? null,
             'soumis_at'             => now(),
         ]);
+
+        AuditLog::write(
+            'evaluation_soumise',
+            "Évaluation soumise pour l'enseignant « {$lien->enseignant->name} ».",
+            'LienQuestionnaire',
+            $lien->id
+        );
 
         return view('questionnaire.merci', compact('lien'));
     }

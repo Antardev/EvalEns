@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\University;
-use App\Models\UniversityReference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class DirectorOnboardingController extends Controller
 {
@@ -14,30 +12,22 @@ class DirectorOnboardingController extends Controller
     {
         $user = Auth::user();
 
-        // Déjà une université soumise → page d'attente
         if ($user->university_id) {
             return redirect()->route('director.pending');
         }
 
-        $universities = UniversityReference::orderBy('nom')->get(['nom', 'acronyme']);
-
-        return view('director.register-university', compact('universities'));
+        return view('director.register-university');
     }
 
     public function storeUniversity(Request $request)
     {
-        $validNoms = UniversityReference::pluck('nom')->all();
-
         $data = $request->validate([
-            'nom'       => ['required', 'string', 'max:255', Rule::in($validNoms)],
+            'nom'       => ['required', 'string', 'max:255'],
+            'acronyme'  => ['nullable', 'string', 'max:20'],
             'email'     => ['required', 'email', 'max:255'],
             'telephone' => ['nullable', 'string', 'max:20'],
             'site_web'  => ['nullable', 'url', 'max:255'],
         ]);
-
-        // L'acronyme vient toujours de la DB, jamais du client
-        $ref = UniversityReference::where('nom', $data['nom'])->first();
-        $data['acronyme'] = $ref?->acronyme;
 
         $user = Auth::user();
 

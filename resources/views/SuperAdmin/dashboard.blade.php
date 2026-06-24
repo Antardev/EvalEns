@@ -34,7 +34,7 @@
                             </svg>
                         </span>
                         <div class="media-body">
-                            <h3 class="mb-0 text-black"><span class="counter ms-0">12</span></h3>
+                            <h3 class="mb-0 text-black"><span class="counter ms-0">{{ $nbUniversites }}</span></h3>
                             <p class="mb-0">Universités</p>
                         </div>
                     </div>
@@ -52,7 +52,7 @@
                             </svg>
                         </span>
                         <div class="media-body">
-                            <h3 class="mb-0 text-black"><span class="counter ms-0">248</span></h3>
+                            <h3 class="mb-0 text-black"><span class="counter ms-0">{{ $nbUtilisateurs }}</span></h3>
                             <p class="mb-0">Utilisateurs</p>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                             </svg>
                         </span>
                         <div class="media-body">
-                            <h3 class="mb-0 text-black"><span class="counter ms-0">1842</span></h3>
+                            <h3 class="mb-0 text-black"><span class="counter ms-0">{{ $nbEvaluations }}</span></h3>
                             <p class="mb-0">Évaluations</p>
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                             </svg>
                         </span>
                         <div class="media-body">
-                            <h3 class="mb-0 text-black"><span class="counter ms-0">3</span></h3>
+                            <h3 class="mb-0 text-black"><span class="counter ms-0">{{ $enAttente }}</span></h3>
                             <p class="mb-0">Demandes en attente</p>
                         </div>
                     </div>
@@ -131,28 +131,23 @@
                     <small class="mb-0">Répartition des évaluations</small>
                 </div>
                 <div class="card-body">
-                    <canvas id="chartUniversites" height="200"></canvas>
+                    @if($topUniversites->sum('count') > 0)
+                        <canvas id="chartUniversites" height="200"></canvas>
+                    @endif
                     <div class="mt-3">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fs-13"><span class="d-inline-block me-2" style="width:12px;height:12px;border-radius:2px;background:#2F4CDD;"></span>Univ. Paris-Saclay</span>
-                            <span class="badge badge-sm badge-primary">412</span>
+                        @php $badgeClasses = ['badge-primary','badge-success','badge-warning','badge-danger','badge-secondary'];
+                             $bgColors = ['#2F4CDD','#2BC155','#FFAB2D','#FF2E2E','#6c757d']; @endphp
+                        @forelse($topUniversites as $i => $univ)
+                        <div class="d-flex align-items-center justify-content-between {{ !$loop->last ? 'mb-2' : '' }}">
+                            <span class="fs-13">
+                                <span class="d-inline-block me-2" style="width:12px;height:12px;border-radius:2px;background:{{ $bgColors[$i] }};"></span>
+                                {{ $univ['nom'] }}
+                            </span>
+                            <span class="badge badge-sm {{ $badgeClasses[$i] }}">{{ $univ['count'] }}</span>
                         </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fs-13"><span class="d-inline-block me-2" style="width:12px;height:12px;border-radius:2px;background:#2BC155;"></span>Sorbonne Université</span>
-                            <span class="badge badge-sm badge-success">387</span>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fs-13"><span class="d-inline-block me-2" style="width:12px;height:12px;border-radius:2px;background:#FFAB2D;"></span>ENS Lyon</span>
-                            <span class="badge badge-sm badge-warning">301</span>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fs-13"><span class="d-inline-block me-2" style="width:12px;height:12px;border-radius:2px;background:#FF2E2E;"></span>Univ. Bordeaux</span>
-                            <span class="badge badge-sm badge-danger">278</span>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span class="fs-13"><span class="d-inline-block me-2" style="width:12px;height:12px;border-radius:2px;background:#6c757d;"></span>Autres</span>
-                            <span class="badge badge-sm badge-secondary">464</span>
-                        </div>
+                        @empty
+                        <p class="text-muted fs-13 text-center mb-0">Aucune évaluation enregistrée.</p>
+                        @endforelse
                     </div>
                 </div>
             </div>
@@ -178,36 +173,35 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @forelse($activiteRecente as $act)
+                                @php
+                                    $acteur = $act->directeur;
+                                    $nomActeur = trim(($acteur->prenom ?? '') . ' ' . ($acteur->nom ?? $acteur->name ?? '—'));
+                                    $isApproved = $act->statut === 'active';
+                                @endphp
                                 <tr>
-                                    <td><span class="font-w500">Marie Dupont</span></td>
-                                    <td><span class="badge badge-sm badge-primary">Évaluation soumise</span></td>
-                                    <td>Paris-Saclay</td>
-                                    <td class="text-muted fs-13">Il y a 5 min</td>
+                                    <td><span class="font-w500">{{ $nomActeur }}</span></td>
+                                    <td>
+                                        @if($isApproved)
+                                            <span class="badge badge-sm badge-success">Inscription approuvée</span>
+                                        @else
+                                            <span class="badge badge-sm badge-danger">Inscription rejetée</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $act->acronyme ?? $act->nom }}</td>
+                                    <td class="text-muted fs-13">
+                                        @if($act->validee_at)
+                                            <span title="{{ $act->validee_at->format('d/m/Y H:i') }}">{{ $act->validee_at->diffForHumans() }}</span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                 </tr>
+                                @empty
                                 <tr>
-                                    <td><span class="font-w500">Jean Martin</span></td>
-                                    <td><span class="badge badge-sm badge-success">Inscription approuvée</span></td>
-                                    <td>ENS Lyon</td>
-                                    <td class="text-muted fs-13">Il y a 23 min</td>
+                                    <td colspan="4" class="text-center text-muted py-3 fs-13">Aucune activité récente</td>
                                 </tr>
-                                <tr>
-                                    <td><span class="font-w500">Sophie Leroy</span></td>
-                                    <td><span class="badge badge-sm badge-warning">Période ouverte</span></td>
-                                    <td>Sorbonne</td>
-                                    <td class="text-muted fs-13">Il y a 1h</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="font-w500">Paul Bernard</span></td>
-                                    <td><span class="badge badge-sm badge-danger">Inscription rejetée</span></td>
-                                    <td>Bordeaux</td>
-                                    <td class="text-muted fs-13">Il y a 2h</td>
-                                </tr>
-                                <tr>
-                                    <td><span class="font-w500">Claire Moreau</span></td>
-                                    <td><span class="badge badge-sm badge-info">Rapport exporté</span></td>
-                                    <td>Paris-Saclay</td>
-                                    <td class="text-muted fs-13">Il y a 3h</td>
-                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -225,36 +219,44 @@
                     <a href="{{ route('superadmin.inscriptions') }}" class="btn btn-xs btn-primary">Gérer</a>
                 </div>
                 <div class="card-body">
-                    <div class="media d-flex align-items-center mb-3 pb-3 border-bottom">
+                    @forelse($demandesRecentes as $i => $demande)
+                    @php
+                        $colors = ['bg-primary','bg-success','bg-warning','bg-info','bg-danger'];
+                        $initiale = strtoupper(substr($demande->directeur->prenom ?? $demande->directeur->name ?? '?', 0, 1));
+                        $soumisIl = $demande->created_at->diffForHumans();
+                    @endphp
+                    <div class="media d-flex align-items-center mb-3 pb-3 {{ !$loop->last ? 'border-bottom' : '' }}">
                         <div class="me-3">
-                            <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle" style="width:42px;height:42px;font-size:16px;font-weight:600;">L</div>
+                            <div class="d-flex align-items-center justify-content-center {{ $colors[$i % 5] }} text-white rounded-circle"
+                                style="width:42px;height:42px;font-size:16px;font-weight:600;">
+                                {{ $initiale }}
+                            </div>
                         </div>
                         <div class="media-body flex-grow-1">
-                            <h6 class="mb-0 font-w500">Lucas Fontaine</h6>
-                            <small class="text-muted">Univ. de Rennes · Étudiant</small>
+                            <h6 class="mb-0 font-w500">
+                                {{ $demande->directeur->prenom ?? '' }} {{ $demande->directeur->nom ?? $demande->directeur->name ?? '—' }}
+                            </h6>
+                            <small class="text-muted">
+                                {{ $demande->nom }}{{ $demande->acronyme ? ' (' . $demande->acronyme . ')' : '' }}
+                                · <span title="{{ $demande->created_at->format('d/m/Y H:i') }}">{{ $soumisIl }}</span>
+                            </small>
                         </div>
                         <span class="badge badge-sm badge-warning">En attente</span>
                     </div>
-                    <div class="media d-flex align-items-center mb-3 pb-3 border-bottom">
-                        <div class="me-3">
-                            <div class="d-flex align-items-center justify-content-center bg-success text-white rounded-circle" style="width:42px;height:42px;font-size:16px;font-weight:600;">A</div>
-                        </div>
-                        <div class="media-body flex-grow-1">
-                            <h6 class="mb-0 font-w500">Amina Chérif</h6>
-                            <small class="text-muted">ENS Paris · Enseignant</small>
-                        </div>
-                        <span class="badge badge-sm badge-warning">En attente</span>
+                    @empty
+                    <div class="text-center text-muted py-3 fs-13">
+                        <i class="lni lni-checkmark-circle d-block mb-2" style="font-size:28px;opacity:.4;"></i>
+                        Aucune demande en attente
                     </div>
-                    <div class="media d-flex align-items-center">
-                        <div class="me-3">
-                            <div class="d-flex align-items-center justify-content-center bg-warning text-white rounded-circle" style="width:42px;height:42px;font-size:16px;font-weight:600;">T</div>
-                        </div>
-                        <div class="media-body flex-grow-1">
-                            <h6 class="mb-0 font-w500">Thomas Girard</h6>
-                            <small class="text-muted">Univ. Strasbourg · Étudiant</small>
-                        </div>
-                        <span class="badge badge-sm badge-warning">En attente</span>
+                    @endforelse
+
+                    @if($enAttente > 5)
+                    <div class="text-center mt-2">
+                        <a href="{{ route('superadmin.inscriptions') }}" class="fs-13 text-primary">
+                            Voir les {{ $enAttente - 5 }} autres demandes →
+                        </a>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -271,15 +273,15 @@
     // Counter animation
     jQuery('.counter').counterUp({ delay: 10, time: 1000 });
 
-    // Bar chart: évaluations par mois
+    // Bar chart: évaluations 6 derniers mois
     var ctx1 = document.getElementById('chartEvaluations').getContext('2d');
     new Chart(ctx1, {
         type: 'bar',
         data: {
-            labels: ['Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai'],
+            labels: {!! json_encode($mois6->pluck('label')) !!},
             datasets: [{
                 label: 'Évaluations',
-                data: [285, 320, 298, 410, 376, 353],
+                data: {!! json_encode($mois6->pluck('count')) !!},
                 backgroundColor: 'rgba(47, 76, 221, 0.8)',
                 borderColor: '#2F4CDD',
                 borderWidth: 1,
@@ -289,19 +291,19 @@
         options: {
             responsive: true,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 100 } } }
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
     });
 
-    // Bar chart annuel
+    // Line chart annuel (12 mois)
     var ctx1b = document.getElementById('chartEvaluationsAnnee').getContext('2d');
     new Chart(ctx1b, {
         type: 'line',
         data: {
-            labels: ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'],
+            labels: {!! json_encode($mois12->pluck('label')) !!},
             datasets: [{
                 label: 'Évaluations',
-                data: [320, 298, 410, 376, 353, 430, 180, 90, 440, 510, 490, 285],
+                data: {!! json_encode($mois12->pluck('count')) !!},
                 borderColor: '#2F4CDD',
                 backgroundColor: 'rgba(47, 76, 221, 0.1)',
                 tension: 0.4,
@@ -316,13 +318,14 @@
     });
 
     // Doughnut chart: top universités
+    @if($topUniversites->sum('count') > 0)
     var ctx2 = document.getElementById('chartUniversites').getContext('2d');
     new Chart(ctx2, {
         type: 'doughnut',
         data: {
-            labels: ['Paris-Saclay', 'Sorbonne', 'ENS Lyon', 'Bordeaux', 'Autres'],
+            labels: {!! json_encode($topUniversites->pluck('nom')) !!},
             datasets: [{
-                data: [412, 387, 301, 278, 464],
+                data: {!! json_encode($topUniversites->pluck('count')) !!},
                 backgroundColor: ['#2F4CDD','#2BC155','#FFAB2D','#FF2E2E','#6c757d'],
                 borderWidth: 2,
                 borderColor: '#fff',
@@ -330,11 +333,10 @@
         },
         options: {
             responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
+            plugins: { legend: { display: false } },
             cutout: '65%',
         }
     });
+    @endif
 </script>
 @endpush

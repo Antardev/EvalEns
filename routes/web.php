@@ -92,9 +92,6 @@ Route::middleware('auth')
 
         Route::get('/statistiques', 'statistiques')->name('statistiques');
 
-        Route::get('/rapports',           'rapports')->name('rapports');
-        Route::post('/rapports/exporter', 'exporterRapport')->name('rapports.exporter');
-
         Route::get('/logs', 'logs')->name('logs');
     });
 

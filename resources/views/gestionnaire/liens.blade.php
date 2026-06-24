@@ -200,13 +200,13 @@
                                 placeholder="Ex: L3 Informatique" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Matière <span class="text-muted fw-normal">(optionnel)</span></label>
+                            <label class="form-label fw-semibold">Matière </label>
                             <input type="text" name="matiere" class="form-control"
                                 value="{{ old('matiere') }}"
                                 placeholder="Ex: Algorithmique avancée">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Enseignant évalué <span class="text-muted fw-normal">(optionnel)</span></label>
+                            <label class="form-label fw-semibold">Enseignant évalué </label>
                             <select name="enseignant_id" class="form-select">
                                 <option value="">— Aucun / Général —</option>
                                 @foreach($enseignants as $ens)
@@ -217,7 +217,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Date d'expiration <span class="text-muted fw-normal">(optionnel)</span></label>
+                            <label class="form-label fw-semibold">Date d'expiration </label>
                             <input type="datetime-local" name="expire_at" class="form-control"
                                 value="{{ old('expire_at') }}">
                         </div>

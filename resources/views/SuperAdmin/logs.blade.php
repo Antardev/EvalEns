@@ -8,182 +8,150 @@
     <div class="form-head d-flex mb-3 align-items-start">
         <div class="me-auto d-none d-lg-block">
             <h2 class="text-primary font-w600 mb-0">Logs d'audit</h2>
-            <p class="mb-0">Historique des connexions et actions importantes</p>
+            <p class="mb-0">Historique des actions effectuées sur la plateforme</p>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-secondary">
-                <i class="lni lni-download me-1"></i>Exporter CSV
-            </button>
+            <span class="badge bg-secondary fs-13 d-flex align-items-center px-3">
+                {{ number_format($total) }} entrée{{ $total > 1 ? 's' : '' }}
+            </span>
         </div>
     </div>
 
     {{-- Filtres --}}
     <div class="card mb-3">
         <div class="card-body py-3">
-            <div class="d-flex flex-wrap gap-2">
-                <input type="text" class="form-control w-auto" id="searchLog" placeholder="Rechercher un utilisateur...">
-                <select class="form-select w-auto" id="filterAction">
-                    <option value="">Toutes les actions</option>
-                    <option value="connexion">Connexion</option>
-                    <option value="deconnexion">Déconnexion</option>
-                    <option value="evaluation">Évaluation soumise</option>
-                    <option value="inscription_approuvee">Inscription approuvée</option>
-                    <option value="inscription_rejetee">Inscription rejetée</option>
-                    <option value="rapport_exporte">Rapport exporté</option>
-                    <option value="critere_modifie">Critère modifié</option>
-                    <option value="universite_creee">Université créée</option>
-                </select>
-                <select class="form-select w-auto" id="filterNiveau">
-                    <option value="">Tous les niveaux</option>
-                    <option value="info">Info</option>
-                    <option value="warning">Avertissement</option>
-                    <option value="error">Erreur</option>
-                </select>
-                <input type="date" class="form-control w-auto" id="filterDateDebut">
-                <input type="date" class="form-control w-auto" id="filterDateFin">
-            </div>
+            <form method="GET" action="{{ route('superadmin.logs') }}" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label mb-1 fs-13">Rechercher un utilisateur</label>
+                    <input type="text" name="search" class="form-control form-control-sm"
+                        placeholder="Nom, prénom ou email..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 fs-13">Action</label>
+                    <select name="action" class="form-select form-select-sm">
+                        <option value="">Toutes</option>
+                        @foreach(\App\Models\AuditLog::actionLabels() as $key => $label)
+                            <option value="{{ $key }}" {{ request('action') === $key ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 fs-13">Niveau</label>
+                    <select name="niveau" class="form-select form-select-sm">
+                        <option value="">Tous</option>
+                        <option value="info"    {{ request('niveau') === 'info'    ? 'selected' : '' }}>Info</option>
+                        <option value="warning" {{ request('niveau') === 'warning' ? 'selected' : '' }}>Warning</option>
+                        <option value="error"   {{ request('niveau') === 'error'   ? 'selected' : '' }}>Erreur</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 fs-13">Du</label>
+                    <input type="date" name="date_debut" class="form-control form-control-sm"
+                        value="{{ request('date_debut') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 fs-13">Au</label>
+                    <input type="date" name="date_fin" class="form-control form-control-sm"
+                        value="{{ request('date_fin') }}">
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="lni lni-search-alt"></i>
+                    </button>
+                    @if(request()->hasAny(['search','action','niveau','date_debut','date_fin']))
+                    <a href="{{ route('superadmin.logs') }}" class="btn btn-outline-secondary btn-sm" title="Réinitialiser">
+                        <i class="lni lni-close"></i>
+                    </a>
+                    @endif
+                </div>
+            </form>
         </div>
     </div>
 
+    {{-- Table --}}
     <div class="card">
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0" id="tableLogs">
-                    <thead>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
                         <tr>
-                            <th>Utilisateur</th>
+                            <th class="ps-4">Utilisateur</th>
                             <th>Action</th>
-                            <th>Ressource / Détail</th>
-                            <th>Adresse IP</th>
-                            <th>Date / Heure</th>
+                            <th>Détails</th>
+                            <th>IP</th>
+                            <th>Date</th>
                             <th class="text-center">Niveau</th>
                         </tr>
                     </thead>
                     <tbody>
+                        @forelse($logs as $log)
                         <tr>
-                            <td><span class="font-w500">Marie Dupont</span><small class="d-block text-muted">Étudiant · Paris-Saclay</small></td>
-                            <td>Évaluation soumise</td>
-                            <td class="text-muted fs-13">Enseignant : J. Martin – Algo avancé</td>
-                            <td class="text-muted fs-12">192.168.1.45</td>
-                            <td class="fs-13">19/05/2026 09:14:32</td>
-                            <td class="text-center"><span class="badge badge-xs badge-primary">Info</span></td>
+                            <td class="ps-4">
+                                @if($log->user && $log->user->id)
+                                    @php $initiale = strtoupper(substr($log->user->prenom ?? $log->user->name, 0, 1)); @endphp
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle"
+                                            style="width:32px;height:32px;font-size:12px;font-weight:600;flex-shrink:0;">
+                                            {{ $initiale }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-500 fs-14">{{ $log->getNomUtilisateur() }}</div>
+                                            <small class="text-muted">{{ $log->user->role ?? '' }}</small>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-muted fs-13">
+                                        <i class="lni lni-cog me-1"></i>Système
+                                    </span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="fw-500 fs-13">{{ $log->getLabelAction() }}</span>
+                            </td>
+                            <td class="fs-13 text-muted" style="max-width:280px;">
+                                {{ $log->details ?? '—' }}
+                            </td>
+                            <td class="fs-13 text-muted font-monospace">{{ $log->ip_address ?? '—' }}</td>
+                            <td class="fs-13 text-muted" title="{{ $log->created_at->format('d/m/Y H:i:s') }}">
+                                {{ $log->created_at->diffForHumans() }}
+                            </td>
+                            <td class="text-center">
+                                @if($log->niveau === 'error')
+                                    <span class="badge badge-sm badge-danger">Erreur</span>
+                                @elseif($log->niveau === 'warning')
+                                    <span class="badge badge-sm badge-warning">Warning</span>
+                                @else
+                                    <span class="badge badge-sm badge-info">Info</span>
+                                @endif
+                            </td>
                         </tr>
+                        @empty
                         <tr>
-                            <td><span class="font-w500">SuperAdmin</span><small class="d-block text-muted">Administrateur système</small></td>
-                            <td>Inscription approuvée</td>
-                            <td class="text-muted fs-13">Utilisateur #247 : Jean Martin (ENS Lyon)</td>
-                            <td class="text-muted fs-12">10.0.0.1</td>
-                            <td class="fs-13">19/05/2026 08:55:10</td>
-                            <td class="text-center"><span class="badge badge-xs badge-success">Info</span></td>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="lni lni-files d-block mb-2" style="font-size:32px;opacity:.3;"></i>
+                                <span class="fs-14">Aucun log trouvé</span>
+                                @if(request()->hasAny(['search','action','niveau','date_debut','date_fin']))
+                                    <br><a href="{{ route('superadmin.logs') }}" class="fs-13 text-primary mt-1 d-inline-block">Réinitialiser les filtres</a>
+                                @endif
+                            </td>
                         </tr>
-                        <tr>
-                            <td><span class="font-w500">Sophie Leroy</span><small class="d-block text-muted">Responsable · Sorbonne</small></td>
-                            <td>Connexion</td>
-                            <td class="text-muted fs-13">Tableau de bord responsable</td>
-                            <td class="text-muted fs-12">195.176.32.11</td>
-                            <td class="fs-13">19/05/2026 08:32:05</td>
-                            <td class="text-center"><span class="badge badge-xs badge-primary">Info</span></td>
-                        </tr>
-                        <tr>
-                            <td><span class="font-w500">SuperAdmin</span><small class="d-block text-muted">Administrateur système</small></td>
-                            <td>Rapport exporté</td>
-                            <td class="text-muted fs-13">Synthèse globale S2 2025-2026</td>
-                            <td class="text-muted fs-12">10.0.0.1</td>
-                            <td class="fs-13">19/05/2026 08:15:44</td>
-                            <td class="text-center"><span class="badge badge-xs badge-primary">Info</span></td>
-                        </tr>
-                        <tr>
-                            <td><span class="font-w500">Utilisateur inconnu</span><small class="d-block text-muted">—</small></td>
-                            <td>Tentative connexion échouée</td>
-                            <td class="text-muted fs-13">Email : admin@fake.com (3 tentatives)</td>
-                            <td class="text-muted fs-12">185.234.19.82</td>
-                            <td class="fs-13">18/05/2026 23:42:17</td>
-                            <td class="text-center"><span class="badge badge-xs badge-danger">Erreur</span></td>
-                        </tr>
-                        <tr>
-                            <td><span class="font-w500">Claire Moreau</span><small class="d-block text-muted">Enseignant · Paris-Saclay</small></td>
-                            <td>Connexion</td>
-                            <td class="text-muted fs-13">Tableau de bord enseignant</td>
-                            <td class="text-muted fs-12">192.168.1.102</td>
-                            <td class="fs-13">18/05/2026 11:20:08</td>
-                            <td class="text-center"><span class="badge badge-xs badge-primary">Info</span></td>
-                        </tr>
-                        <tr>
-                            <td><span class="font-w500">SuperAdmin</span><small class="d-block text-muted">Administrateur système</small></td>
-                            <td>Critère modifié</td>
-                            <td class="text-muted fs-13">Pondération « Pédagogie » : 25% → 30%</td>
-                            <td class="text-muted fs-12">10.0.0.1</td>
-                            <td class="fs-13">18/05/2026 10:05:30</td>
-                            <td class="text-center"><span class="badge badge-xs badge-warning">Avert.</span></td>
-                        </tr>
-                        <tr>
-                            <td><span class="font-w500">Paul Bernard</span><small class="d-block text-muted">Étudiant · Bordeaux</small></td>
-                            <td>Compte suspendu</td>
-                            <td class="text-muted fs-13">Suspension par SuperAdmin – comportement abusif</td>
-                            <td class="text-muted fs-12">10.0.0.1</td>
-                            <td class="fs-13">17/05/2026 16:30:00</td>
-                            <td class="text-center"><span class="badge badge-xs badge-warning">Avert.</span></td>
-                        </tr>
-                        <tr>
-                            <td><span class="font-w500">SuperAdmin</span><small class="d-block text-muted">Administrateur système</small></td>
-                            <td>Université créée</td>
-                            <td class="text-muted fs-13">Université de Genève (UNIGE) ajoutée</td>
-                            <td class="text-muted fs-12">10.0.0.1</td>
-                            <td class="fs-13">15/05/2026 14:12:55</td>
-                            <td class="text-center"><span class="badge badge-xs badge-primary">Info</span></td>
-                        </tr>
-                        <tr>
-                            <td><span class="font-w500">Amina Chérif</span><small class="d-block text-muted">Enseignant · ENS Paris</small></td>
-                            <td>Connexion</td>
-                            <td class="text-muted fs-13">Première connexion après inscription</td>
-                            <td class="text-muted fs-12">78.192.45.33</td>
-                            <td class="fs-13">14/05/2026 09:00:11</td>
-                            <td class="text-center"><span class="badge badge-xs badge-success">Info</span></td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <span class="text-muted fs-13">Affichage 1-10 sur 1 284 entrées</span>
-                <nav>
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link" href="#">Précédent</a></li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item"><span class="page-link">...</span></li>
-                        <li class="page-item"><a class="page-link" href="#">129</a></li>
-                        <li class="page-item"><a class="page-link" href="#">Suivant</a></li>
-                    </ul>
-                </nav>
+            @if($logs->hasPages())
+            <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top">
+                <small class="text-muted">
+                    Entrées {{ $logs->firstItem() }}–{{ $logs->lastItem() }} sur {{ number_format($logs->total()) }}
+                </small>
+                {{ $logs->links('pagination::bootstrap-5') }}
             </div>
+            @endif
         </div>
     </div>
 
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.getElementById('searchLog').addEventListener('input', function () {
-        const q = this.value.toLowerCase();
-        document.querySelectorAll('#tableLogs tbody tr').forEach(row => {
-            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-        });
-    });
-
-    document.getElementById('filterAction').addEventListener('change', function () {
-        // TODO: server-side filtering
-    });
-
-    document.getElementById('filterNiveau').addEventListener('change', function () {
-        const val = this.value;
-        document.querySelectorAll('#tableLogs tbody tr').forEach(row => {
-            if (!val) { row.style.display = ''; return; }
-            const badge = row.querySelector('.badge')?.textContent.toLowerCase() || '';
-            row.style.display = badge.includes(val === 'info' ? 'info' : val === 'warning' ? 'avert' : 'err') ? '' : 'none';
-        });
-    });
-</script>
-@endpush
