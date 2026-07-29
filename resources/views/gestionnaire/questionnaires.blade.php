@@ -128,32 +128,12 @@
         let total = 0;
         document.querySelectorAll('.critere-poids').forEach(i => total += parseInt(i.value) || 0);
         const el = document.getElementById('totalPoids');
-        el.textContent = total + '%';
-        el.className = 'fs-16 font-w600 ' + (total === 100 ? 'text-success' : 'text-danger');
+        if (el) {
+            el.textContent = total + '%';
+            el.className = 'fs-16 font-w600 ' + (total === 100 ? 'text-success' : 'text-danger');
+        }
         updateChart();
     }
-
-    document.querySelectorAll('.critere-poids').forEach(i => i.addEventListener('input', updateTotal));
-    document.querySelectorAll('.btn-rm').forEach(btn => {
-        btn.addEventListener('click', function () { this.closest('tr').remove(); updateTotal(); });
-    });
-
-    var rowIndex = {{ $criteres->count() }};
-    document.getElementById('btnAjouterCritere').addEventListener('click', function () {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" name="criteres[${rowIndex}][nom]" class="form-control form-control-sm" required></td>
-            <td><input type="text" name="criteres[${rowIndex}][description]" class="form-control form-control-sm"></td>
-            <td><input type="number" name="criteres[${rowIndex}][poids]" class="form-control form-control-sm critere-poids" value="0" min="0" max="100" required></td>
-            <td class="text-center"><div class="form-check form-switch d-inline-block"><input class="form-check-input" type="checkbox" name="criteres[${rowIndex}][actif]" value="1" checked></div></td>
-            <td><button type="button" class="btn btn-xs btn-outline-danger btn-rm"><i class="lni lni-trash"></i></button></td>
-        `;
-        tr.querySelector('.btn-rm').addEventListener('click', function () { this.closest('tr').remove(); updateTotal(); });
-        tr.querySelector('.critere-poids').addEventListener('input', updateTotal);
-        document.getElementById('criteresBody').appendChild(tr);
-        rowIndex++;
-        updateTotal();
-    });
 
     function updateChart() {
         const labels = [], data = [], colors = [
@@ -180,6 +160,45 @@
         });
     }
 
-    updateTotal();
+    document.addEventListener('DOMContentLoaded', function () {
+        const criteresBody = document.getElementById('criteresBody');
+        const addButton = document.getElementById('btnAjouterCritere');
+        let rowIndex = {{ $criteres->count() }};
+
+        document.querySelectorAll('.critere-poids').forEach(i => i.addEventListener('input', updateTotal));
+
+        if (criteresBody) {
+            criteresBody.addEventListener('click', function (event) {
+                const btn = event.target.closest('.btn-rm');
+                if (!btn) return;
+                event.preventDefault();
+                const row = btn.closest('tr');
+                if (row) {
+                    row.remove();
+                    updateTotal();
+                }
+            });
+        }
+
+        if (addButton) {
+            addButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" name="criteres[${rowIndex}][nom]" class="form-control form-control-sm" required></td>
+                    <td><input type="text" name="criteres[${rowIndex}][description]" class="form-control form-control-sm"></td>
+                    <td><input type="number" name="criteres[${rowIndex}][poids]" class="form-control form-control-sm critere-poids" value="0" min="0" max="100" required></td>
+                    <td class="text-center"><div class="form-check form-switch d-inline-block"><input class="form-check-input" type="checkbox" name="criteres[${rowIndex}][actif]" value="1" checked></div></td>
+                    <td><button type="button" class="btn btn-xs btn-outline-danger btn-rm"><i class="lni lni-trash"></i></button></td>
+                `;
+                tr.querySelector('.critere-poids').addEventListener('input', updateTotal);
+                criteresBody.appendChild(tr);
+                rowIndex++;
+                updateTotal();
+            });
+        }
+
+        updateTotal();
+    });
 </script>
 @endpush

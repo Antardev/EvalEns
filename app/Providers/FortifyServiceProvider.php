@@ -54,7 +54,7 @@ class FortifyServiceProvider extends ServiceProvider
 
         // Vues personnalisées
         Fortify::loginView(fn () => view('auth.login'));
-        Fortify::registerView(fn () => view('auth.choose-profile'));
+        Fortify::registerView(fn () => view('auth.register'));
         Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));
         Fortify::resetPasswordView(fn ($request) => view('auth.reset-password', ['request' => $request]));
 

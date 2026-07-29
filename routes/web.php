@@ -112,16 +112,6 @@ Route::middleware(['auth', 'director.onboarding'])
         Route::put('/enseignants/{id}',    'modifierEnseignant')->name('enseignants.modifier');
         Route::delete('/enseignants/{id}', 'supprimerEnseignant')->name('enseignants.supprimer');
 
-        Route::get('/periodes',         'periodes')->name('periodes');
-        Route::post('/periodes',        'creerPeriode')->name('periodes.creer');
-        Route::put('/periodes/{id}',    'modifierPeriode')->name('periodes.modifier');
-        Route::delete('/periodes/{id}', 'supprimerPeriode')->name('periodes.supprimer');
-
-        Route::get('/formations',         'formations')->name('formations');
-        Route::post('/formations',        'creerFormation')->name('formations.creer');
-        Route::put('/formations/{id}',    'modifierFormation')->name('formations.modifier');
-        Route::delete('/formations/{id}', 'supprimerFormation')->name('formations.supprimer');
-
         Route::get('/annexes',                      'annexes')->name('annexes');
         Route::post('/annexes',                     'creerAnnexe')->name('annexes.creer');
         Route::put('/annexes/{id}',                 'modifierAnnexe')->name('annexes.modifier');
@@ -147,6 +137,7 @@ Route::middleware(['auth', EnsureIsGestionnaire::class])
     ->group(function () {
         Route::get('/',            'dashboard')->name('dashboard');
         Route::get('/enseignants', 'enseignants')->name('enseignants');
+        Route::post('/enseignants/importer', 'importerEnseignants')->name('enseignants.importer');
 
         // Liens questionnaires
         Route::get('/liens',                    'liens')->name('liens');

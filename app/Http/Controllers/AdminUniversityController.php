@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+USE App\Models\Critere;
+USE Illuminate\Support\Facades\Mail;
+
 
 class AdminUniversityController extends Controller
 {
@@ -23,17 +26,17 @@ class AdminUniversityController extends Controller
     {
         $univId = $this->universityId();
 
-        $nbEnseignants = \App\Models\User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+        $nbEnseignants = User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
             ->where('role', 'enseignant')->count();
 
-        $nbAnnexes = \App\Models\Annexe::where('university_id', $univId)->count();
+        $nbAnnexes = Annexe::where('university_id', $univId)->count();
 
-        $nbEvaluations = \App\Models\ReponseQuestionnaire::whereHas('lien.annexe', fn($q) => $q->where('university_id', $univId))->count();
+        $nbEvaluations = ReponseQuestionnaire::whereHas('lien.annexe', fn($q) => $q->where('university_id', $univId))->count();
 
-        $nbLiens = \App\Models\LienQuestionnaire::whereHas('annexe', fn($q) => $q->where('university_id', $univId))->count();
+        $nbLiens = LienQuestionnaire::whereHas('annexe', fn($q) => $q->where('university_id', $univId))->count();
 
         // Moyennes par annexe pour le graphe
-        $annexes = \App\Models\Annexe::where('university_id', $univId)->orderBy('nom')->get();
+        $annexes = Annexe::where('university_id', $univId)->orderBy('nom')->get();
 
         $statsParAnnexe = $annexes->map(function ($annexe) {
             $reponses = \App\Models\ReponseQuestionnaire::whereHas('lien', fn($q) => $q->where('annexe_id', $annexe->id))->get();
@@ -46,7 +49,7 @@ class AdminUniversityController extends Controller
         });
 
         // Enseignants récents
-        $enseignantsRecents = \App\Models\User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+        $enseignantsRecents = User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
             ->where('role', 'enseignant')
             ->with('annexes')
             ->latest()
@@ -169,62 +172,14 @@ class AdminUniversityController extends Controller
         ));
     }
 
-    public function periodes()
-    {
-        return view('adminuniversity.periodes');
-    }
-
-    public function creerPeriode(Request $request)
-    {
-        $request->validate([
-            'nom'        => 'required|string|max:255',
-            'date_debut' => 'required|date',
-            'date_fin'   => 'required|date|after:date_debut',
-        ]);
-        return redirect()->route('adminuniversity.periodes')->with('success', 'Période créée.');
-    }
-
-    public function modifierPeriode(Request $request, $id)
-    {
-        $request->validate([
-            'nom'        => 'required|string|max:255',
-            'date_debut' => 'required|date',
-            'date_fin'   => 'required|date|after:date_debut',
-        ]);
-        return redirect()->route('adminuniversity.periodes')->with('success', 'Période mise à jour.');
-    }
-
-    public function supprimerPeriode($id)
-    {
-        return redirect()->route('adminuniversity.periodes')->with('success', 'Période supprimée.');
-    }
-
-    public function formations()
-    {
-        return view('adminuniversity.formations');
-    }
-
-    public function creerFormation(Request $request)
-    {
-        $request->validate(['nom' => 'required|string|max:255']);
-        return redirect()->route('adminuniversity.formations')->with('success', 'Formation créée.');
-    }
-
-    public function modifierFormation(Request $request, $id)
-    {
-        $request->validate(['nom' => 'required|string|max:255']);
-        return redirect()->route('adminuniversity.formations')->with('success', 'Formation mise à jour.');
-    }
-
-    public function supprimerFormation($id)
-    {
-        return redirect()->route('adminuniversity.formations')->with('success', 'Formation supprimée.');
-    }
+    /* ═══════════════════════════════════════════════
+       QUESTIONNAIRES / CRITÈRES
+    ═══════════════════════════════════════════════ */
 
     public function questionnaires()
     {
         $univId   = $this->universityId();
-        $criteres = \App\Models\Critere::where(function ($q) use ($univId) {
+        $criteres = Critere::where(function ($q) use ($univId) {
                         $q->where('university_id', $univId)
                           ->orWhereNull('university_id');
                     })
@@ -249,11 +204,12 @@ class AdminUniversityController extends Controller
             'criteres.*.poids'      => ['required', 'integer', 'min:0', 'max:100'],
         ]);
 
-        // Supprimer les anciens critères de cette université, puis recréer
-        \App\Models\Critere::where('university_id', $univId)->delete();
+        $criteresSoumis = $request->input('criteres', []);
 
-        foreach ($request->input('criteres') as $i => $data) {
-            \App\Models\Critere::create([
+        Critere::where('university_id', $univId)->delete();
+
+        foreach ($criteresSoumis as $i => $data) {
+            Critere::create([
                 'university_id' => $univId,
                 'nom'           => $data['nom'],
                 'description'   => $data['description'] ?? '',

@@ -8,6 +8,12 @@ use App\Models\LienQuestionnaire;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use App\Mail\EnseignantCredentialsMail;
 
 class GestionnaireController extends Controller
 {
@@ -48,6 +54,168 @@ class GestionnaireController extends Controller
 
         return view('gestionnaire.enseignants', compact('annexe', 'membres', 'total'));
     }
+
+ public function importerEnseignants(Request $request)
+{
+    $annexe = $this->annexe();
+
+    $data = $request->validate([
+        'fichier' => ['required', 'file', 'mimes:xlsx,xls,csv'],
+    ]);
+
+    $path = $request->file('fichier')->getRealPath();
+
+    try {
+        $spreadsheet = IOFactory::load($path);
+    } catch (\Throwable $e) {
+        return redirect()
+            ->route('gestionnaire.enseignants')
+            ->with('error', "Le fichier n'a pas pu être lu : " . $e->getMessage());
+    }
+
+    $sheet = $spreadsheet->getActiveSheet();
+    $rows  = $sheet->toArray();
+
+    $imported     = 0;
+    $skipped      = 0;
+    $errors       = [];
+    $header       = null;
+    $generatedCredentials = []; // [email => ['prenom' => ..., 'password' => ...]]
+
+    DB::beginTransaction();
+
+    try {
+        foreach ($rows as $index => $row) {
+            $ligneNumero = $index + 1;
+
+            if ($index === 0) {
+                $header = array_map(fn($value) => strtolower(trim((string) $value)), $row);
+                continue;
+            }
+
+            $rowValues = array_values(array_map(fn($value) => trim((string) ($value ?? '')), $row));
+
+            if (empty(array_filter($rowValues, fn($value) => $value !== ''))) {
+                continue;
+            }
+
+            $values = [];
+            foreach ($header as $i => $column) {
+                $values[$column] = $rowValues[$i] ?? '';
+            }
+
+            $prenom = $values['prenom'] ?? $values['prénom'] ?? $values['first_name'] ?? $values['firstname'] ?? '';
+            $nom    = $values['nom'] ?? $values['last_name'] ?? $values['name'] ?? '';
+            $email  = $values['email'] ?? $values['mail'] ?? $values['e-mail'] ?? '';
+
+            if ($prenom === '' || $nom === '') {
+                $skipped++;
+                $errors[] = "Ligne {$ligneNumero} : prénom ou nom manquant.";
+                continue;
+            }
+
+            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $skipped++;
+                $errors[] = "Ligne {$ligneNumero} : email invalide (\"{$email}\").";
+                continue;
+            }
+
+            $email = strtolower($email);
+            $user = User::where('email', $email)->first();
+
+            if ($user && $user->role && $user->role !== 'enseignant') {
+                $skipped++;
+                $errors[] = "Ligne {$ligneNumero} : l'email \"{$email}\" appartient déjà à un compte avec le rôle \"{$user->role}\", import ignoré pour cette ligne.";
+                continue;
+            }
+
+            $isNewUser = ! $user;
+
+            if ($isNewUser) {
+                $user = new User();
+                $user->email = $email;
+
+                $motDePasseGenere = $this->genererMotDePasse($prenom, $email);
+                $user->password = Hash::make($motDePasseGenere);
+
+                $generatedCredentials[$email] = [
+                    'prenom'   => $prenom,
+                    'password' => $motDePasseGenere,
+                ];
+            }
+
+            $user->prenom = $prenom;
+            $user->nom = $nom;
+            $user->name = trim($prenom . ' ' . $nom);
+            $user->role = 'enseignant';
+            $user->university_id = $annexe->university_id ?? $user->university_id;
+            $user->save();
+
+            $user->annexes()->syncWithoutDetaching([$annexe->id]);
+            $imported++;
+        }
+
+        DB::commit();
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return redirect()
+            ->route('gestionnaire.enseignants')
+            ->with('error', "L'import a échoué et a été annulé : " . $e->getMessage());
+    }
+
+    $emailsEnErreur = [];
+
+    foreach ($generatedCredentials as $email => $credentials) {
+        try {
+            Mail::to($email)->queue(new EnseignantCredentialsMail(
+                $credentials['prenom'],
+                $email,
+                $credentials['password'],
+                $annexe->nom
+            ));
+        } catch (\Throwable $e) {
+            $emailsEnErreur[] = $email;
+            \Log::warning("Échec mise en file d'email pour {$email} : " . $e->getMessage());
+        }
+    }
+
+    $message = "Import terminé : {$imported} enseignant(s) importé(s), {$skipped} ligne(s) ignorée(s).";
+
+    if (count($generatedCredentials) > 0) {
+        $nbEnvoyes = count($generatedCredentials) - count($emailsEnErreur);
+        $message .= " {$nbEnvoyes} email(s) d'identifiants mis en file d'envoi.";
+    }
+
+    if (! empty($emailsEnErreur)) {
+        $errors[] = "Échec d'envoi d'email pour : " . implode(', ', $emailsEnErreur);
+    }
+
+    return redirect()
+        ->route('gestionnaire.enseignants')
+        ->with('success', $message)
+        ->with('import_errors', $errors);
+}
+
+/**
+ * Génère un mot de passe à partir du prénom, de la partie locale de l'email
+ * et de chiffres aléatoires. Ex: "jean" + "jdupont" + "4821" => "Jeanjdupont4821"
+ */
+private function genererMotDePasse(string $prenom, string $email): string
+{
+    $localPart = strstr($email, '@', true) ?: $email;
+
+    $prenomClean = Str::ascii(trim($prenom));
+    $localPartClean = Str::ascii($localPart);
+
+    $prenomClean = preg_replace('/[^a-zA-Z0-9]/', '', $prenomClean);
+    $localPartClean = preg_replace('/[^a-zA-Z0-9]/', '', $localPartClean);
+
+    $prenomFormate = ucfirst(strtolower($prenomClean));
+
+    $chiffres = (string) random_int(1000, 9999);
+
+    return $prenomFormate . $localPartClean . $chiffres;
+}
 
     /* ═══════════════════════════════════════════════
        LIENS QUESTIONNAIRES
@@ -157,9 +325,11 @@ class GestionnaireController extends Controller
             'criteres.*.poids'       => ['required', 'integer', 'min:0', 'max:100'],
         ]);
 
+        $criteresSoumis = $request->input('criteres', []);
+
         Critere::where('university_id', $univId)->delete();
 
-        foreach ($request->input('criteres') as $i => $data) {
+        foreach ($criteresSoumis as $i => $data) {
             Critere::create([
                 'university_id' => $univId,
                 'nom'           => $data['nom'],

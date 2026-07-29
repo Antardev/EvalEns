@@ -10,8 +10,73 @@
             <h2 class="text-primary font-w600 mb-0">Enseignants</h2>
             <p class="mb-0">{{ $annexe->nom }} — {{ $annexe->ville ?? '' }}</p>
         </div>
-        <span class="badge badge-success px-3 py-2 fs-13">{{ $total }} enseignant{{ $total !== 1 ? 's' : '' }}</span>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge badge-success px-3 py-2 fs-13">{{ $total }} enseignant{{ $total !== 1 ? 's' : '' }}</span>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportEnseignants">
+                <i class="lni lni-plus me-1"></i>Importer Excel
+            </button>
+        </div>
     </div>
+
+    <div class="modal fade" id="modalImportEnseignants" tabindex="-1" aria-labelledby="modalImportEnseignantsLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('gestionnaire.enseignants.importer') }}" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalImportEnseignantsLabel">Importer des enseignants depuis Excel</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        @error('fichier')
+                            <div class="alert alert-danger py-2 fs-13">{{ $message }}</div>
+                        @enderror
+
+                        <div class="mb-3">
+                            <label class="form-label">Fichier Excel</label>
+                            <input type="file" name="fichier" class="form-control @error('fichier') is-invalid @enderror" accept=".xlsx,.xls,.csv" required>
+                            <small class="text-muted">Le fichier doit contenir au moins les colonnes Prénom, Nom et Email.</small>
+                        </div>
+                        <div class="mb-3">
+                            <a href="{{ asset('models/modele_enseignants.xlsx') }}" class="btn btn-outline-secondary btn-sm" download>
+                                <i class="lni lni-download me-1"></i>Télécharger le modèle Excel
+                            </a>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Importer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Messages de résultat de l'import --}}
+    @if(session('success'))
+        <div class="alert alert-success mb-3">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger mb-3">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session('import_errors') && count(session('import_errors')) > 0)
+        <div class="alert alert-warning mb-3">
+            <strong>{{ count(session('import_errors')) }} ligne(s) ignorée(s) :</strong>
+            <ul class="mb-0 mt-2 fs-13">
+                @foreach(session('import_errors') as $erreur)
+                    <li>{{ $erreur }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     {{-- Recherche --}}
     <div class="card mb-3">
@@ -47,7 +112,7 @@
                             <tr>
                                 <th>Nom</th>
                                 <th>Email</th>
-                                <th>Inscrit le</th>
+                                <th>Ajouté le</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -57,7 +122,7 @@
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold"
                                             style="width:36px;height:36px;flex-shrink:0;font-size:13px;background:#2BC155;">
-                                            {{ strtoupper(substr($m->prenom, 0, 1)) }}
+                                            {{ strtoupper(substr($m->prenom ?: $m->nom ?: '?', 0, 1)) }}
                                         </div>
                                         <div class="font-w500">{{ $m->prenom }} {{ $m->nom }}</div>
                                     </div>
@@ -82,3 +147,13 @@
 
 </div>
 @endsection
+
+@if($errors->any() && $errors->has('fichier'))
+<script>
+    // Rouvre automatiquement la modale si la validation du fichier a échoué
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = new bootstrap.Modal(document.getElementById('modalImportEnseignants'));
+        modal.show();
+    });
+</script>
+@endif

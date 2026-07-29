@@ -27,30 +27,17 @@
                         </div>
                     @endif
 
-                    @php
-                        $roleParam = old('role', request('role'));
-                        $roleLabels = [
-                            'directeur'  => ['label' => 'Directeur',  'icon' => 'lni-briefcase'],
-                            'enseignant' => ['label' => 'Enseignant', 'icon' => 'lni-blackboard'],
-                        ];
-                        $roleInfo = $roleLabels[$roleParam] ?? null;
-                    @endphp
-
-                    {{-- Profil sélectionné --}}
-                    @if($roleInfo)
                     <div class="d-flex align-items-center justify-content-between mb-4 px-3 py-2 rounded"
                         style="background:#f0f3ff; border:1px solid #c7d0f8;">
                         <div class="d-flex align-items-center gap-2">
-                            <i class="lni {{ $roleInfo['icon'] }} text-primary" style="font-size:20px;"></i>
-                            <span class="font-w600 text-primary">{{ $roleInfo['label'] }}</span>
+                            <i class="lni lni-briefcase text-primary" style="font-size:20px;"></i>
+                            <span class="font-w600 text-primary">Directeur</span>
                         </div>
-                        <a href="{{ route('register') }}" class="fs-12 text-muted">Changer</a>
                     </div>
-                    @endif
 
                     <form method="POST" action="{{ route('register') }}">
                         @csrf
-                        <input type="hidden" name="role" value="{{ $roleParam }}">
+                        <input type="hidden" name="role" value="directeur">
 
                         <div class="row g-3 mb-3">
                             <div class="col-6">
@@ -76,47 +63,6 @@
                                 @enderror
                             </div>
                         </div>
-
-                        {{-- Sélection université + annexes (enseignant uniquement) --}}
-                        @if($roleParam === 'enseignant')
-                        @php
-                            $oldAnnexeIds   = array_map('intval', old('annexe_ids', []));
-                            $allUnivJson    = ($universities ?? collect())->map(fn($u) => [
-                                'id'      => $u->id,
-                                'nom'     => $u->nom,
-                                'acronyme'=> $u->acronyme ?? '',
-                            ])->values();
-                            $allAnnexesJson = ($annexes ?? collect())->map(fn($a) => [
-                                'id'            => $a->id,
-                                'university_id' => $a->university_id,
-                                'nom'           => $a->nom,
-                                'ville'         => $a->ville ?? '',
-                            ])->values();
-                        @endphp
-
-                        @error('annexe_ids')
-                            <div class="alert alert-danger py-2 fs-13 mb-2">{{ $message }}</div>
-                        @enderror
-
-                        {{-- Étape 1 : Universités --}}
-                        <div class="mb-3">
-                            <label class="mb-2 d-block"><strong>Université(s) <span class="text-danger">*</span></strong></label>
-                            <div id="univCards" class="d-flex flex-wrap gap-2"></div>
-                        </div>
-
-                        {{-- Étape 2 : Annexes (apparaît après sélection université) --}}
-                        <div id="blocAnnexes" class="mb-3" style="display:none;">
-                            <label class="mb-2 d-block"><strong>Annexe(s) <span class="text-danger">*</span></strong></label>
-                            <div id="annexeChips" class="d-flex flex-wrap gap-2"></div>
-                            <small id="msgAucuneAnnexe" class="text-warning mt-1" style="display:none;">
-                                <i class="lni lni-warning me-1"></i>Aucune annexe disponible pour cette université.
-                            </small>
-                        </div>
-
-                        {{-- Champs hidden soumis au formulaire --}}
-                        <div id="hiddenAnnexes"></div>
-
-                        @endif
 
                         <div class="form-group mb-3">
                             <label class="mb-1"><strong>Adresse e-mail</strong></label>
@@ -200,130 +146,6 @@ function togglePassword(inputId, btn) {
         btn.innerHTML = SVG_EYE;
     }
 }
-
-/* ── Sélection université → annexes (cartes cliquables) ── */
-(function () {
-    const univCardsEl  = document.getElementById('univCards');
-    const annexeChipsEl= document.getElementById('annexeChips');
-    const blocAnnexes  = document.getElementById('blocAnnexes');
-    const msgVide      = document.getElementById('msgAucuneAnnexe');
-    const hiddenDiv    = document.getElementById('hiddenAnnexes');
-    if (!univCardsEl) return;
-
-    const allUnivs   = {!! json_encode($allUnivJson ?? []) !!};
-    const allAnnexes = {!! json_encode($allAnnexesJson ?? []) !!};
-    const oldIds     = {!! json_encode(array_map('intval', old('annexe_ids', []))) !!};
-
-    let selectedUnivIds  = [];
-    let selectedAnnexIds = [...oldIds];
-
-    const CARD_BASE = 'univ-card d-flex align-items-center gap-2 px-3 py-2 rounded border cursor-pointer';
-    const CARD_OFF  = 'bg-white border-secondary text-secondary';
-    const CARD_ON   = 'bg-primary border-primary text-white';
-
-    const CHIP_BASE = 'annexe-chip d-flex align-items-center gap-1 px-3 py-2 rounded-pill border cursor-pointer fs-13';
-    const CHIP_OFF  = 'bg-white border-secondary text-secondary';
-    const CHIP_ON   = 'bg-success border-success text-white';
-
-    /* ─ Build university cards ─ */
-    allUnivs.forEach(function (u) {
-        const card = document.createElement('div');
-        card.className = CARD_BASE + ' ' + CARD_OFF;
-        card.dataset.id = u.id;
-        card.style.cssText = 'cursor:pointer;transition:.15s;user-select:none;font-size:13px;';
-        card.innerHTML = '<i class="lni lni-university" style="font-size:16px;"></i>'
-            + '<span class="fw-semibold">' + u.nom + (u.acronyme ? ' <small class="opacity-75">(' + u.acronyme + ')</small>' : '') + '</span>'
-            + '<i class="lni lni-checkmark-circle ms-1 check-icon" style="display:none;font-size:14px;"></i>';
-
-        card.addEventListener('click', function () {
-            const id = parseInt(this.dataset.id);
-            if (selectedUnivIds.includes(id)) {
-                selectedUnivIds = selectedUnivIds.filter(x => x !== id);
-                this.className = CARD_BASE + ' ' + CARD_OFF;
-                this.querySelector('.check-icon').style.display = 'none';
-                // deselect annexes of this univ
-                allAnnexes.filter(a => a.university_id === id).forEach(a => {
-                    selectedAnnexIds = selectedAnnexIds.filter(x => x !== a.id);
-                });
-            } else {
-                selectedUnivIds.push(id);
-                this.className = CARD_BASE + ' ' + CARD_ON;
-                this.querySelector('.check-icon').style.display = '';
-            }
-            renderAnnexes();
-            updateHidden();
-        });
-
-        univCardsEl.appendChild(card);
-    });
-
-    /* ─ Render annexe chips for selected univs ─ */
-    function renderAnnexes() {
-        annexeChipsEl.innerHTML = '';
-        const filtered = allAnnexes.filter(a => selectedUnivIds.includes(a.university_id));
-        blocAnnexes.style.display  = selectedUnivIds.length ? '' : 'none';
-        msgVide.style.display      = (selectedUnivIds.length && filtered.length === 0) ? '' : 'none';
-
-        filtered.forEach(function (a) {
-            const chip = document.createElement('div');
-            const isOn = selectedAnnexIds.includes(a.id);
-            chip.className = CHIP_BASE + ' ' + (isOn ? CHIP_ON : CHIP_OFF);
-            chip.dataset.id = a.id;
-            chip.style.cssText = 'cursor:pointer;transition:.15s;user-select:none;';
-            chip.innerHTML = '<i class="lni lni-map-marker" style="font-size:13px;"></i>'
-                + '<span>' + a.nom + (a.ville ? ' <span class="opacity-75">— ' + a.ville + '</span>' : '') + '</span>'
-                + (isOn ? '<i class="lni lni-close" style="font-size:11px;"></i>' : '');
-
-            chip.addEventListener('click', function () {
-                const id = parseInt(this.dataset.id);
-                if (selectedAnnexIds.includes(id)) {
-                    selectedAnnexIds = selectedAnnexIds.filter(x => x !== id);
-                    this.className = CHIP_BASE + ' ' + CHIP_OFF;
-                    this.querySelector('.lni-close') && this.querySelector('.lni-close').remove();
-                } else {
-                    selectedAnnexIds.push(id);
-                    this.className = CHIP_BASE + ' ' + CHIP_ON;
-                    if (!this.querySelector('.lni-close')) {
-                        const x = document.createElement('i');
-                        x.className = 'lni lni-close';
-                        x.style.fontSize = '11px';
-                        this.appendChild(x);
-                    }
-                }
-                updateHidden();
-            });
-
-            annexeChipsEl.appendChild(chip);
-        });
-    }
-
-    /* ─ Sync hidden inputs ─ */
-    function updateHidden() {
-        hiddenDiv.innerHTML = '';
-        selectedAnnexIds.forEach(function (id) {
-            const inp = document.createElement('input');
-            inp.type = 'hidden';
-            inp.name = 'annexe_ids[]';
-            inp.value = id;
-            hiddenDiv.appendChild(inp);
-        });
-    }
-
-    /* ─ Restore after validation error ─ */
-    if (oldIds.length) {
-        const univIds = [...new Set(allAnnexes.filter(a => oldIds.includes(a.id)).map(a => a.university_id))];
-        univIds.forEach(function (uid) {
-            const card = univCardsEl.querySelector('[data-id="' + uid + '"]');
-            if (card) {
-                selectedUnivIds.push(uid);
-                card.className = CARD_BASE + ' ' + CARD_ON;
-                card.querySelector('.check-icon').style.display = '';
-            }
-        });
-        renderAnnexes();
-        updateHidden();
-    }
-})();
 </script>
 @endpush
 
