@@ -134,7 +134,9 @@
             </div>
 
             {{-- Stats rapides --}}
-            <div class="row">
+
+        </div>
+        <div class="row">
                 <div class="col-md-4">
                     <div class="card text-center">
                         <div class="card-body py-3">
@@ -160,7 +162,6 @@
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 @endsection

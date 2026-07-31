@@ -108,23 +108,8 @@
                                 <label class="form-label fw-semibold">Longueur max. du commentaire</label>
                                 <input type="number" name="commentaire_max" class="form-control" value="500" min="50" max="2000">
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Anonymat garanti</label>
-                                <div class="form-check mt-1">
-                                    <input class="form-check-input" type="checkbox" name="anonymat" value="1" id="chkAnonyme" checked>
-                                    <label class="form-check-label" for="chkAnonyme">
-                                        Cacher l'identité de l'étudiant à l'enseignant
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Seuil de confidentialité</label>
-                                <div class="input-group">
-                                    <input type="number" name="seuil_confidentialite" class="form-control" value="5" min="3" max="20">
-                                    <span class="input-group-text">réponses min.</span>
-                                </div>
-                                <small class="text-muted">Résultats masqués si moins de N réponses</small>
-                            </div>
+
+
                         </div>
 
                         <div class="mt-4 text-end">
@@ -146,18 +131,7 @@
                     <canvas id="chartCriteres" height="220"></canvas>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="mb-3">Aperçu étudiant</h5>
-                    <p class="text-muted fs-13">Le formulaire présentera :</p>
-                    <ul class="fs-13 text-muted">
-                        <li>5 critères de notation (échelle 1–5)</li>
-                        <li>Un champ commentaire optionnel (max. 500 caractères)</li>
-                        <li>Bouton « Enregistrer brouillon »</li>
-                        <li>Bouton « Soumettre définitivement »</li>
-                    </ul>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>

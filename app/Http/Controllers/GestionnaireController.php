@@ -300,15 +300,17 @@ private function genererMotDePasse(string $prenom, string $email): string
         $annexe = $this->annexe();
         $univId = $annexe->university_id ?? null;
 
-        $criteres = Critere::where(function ($q) use ($univId) {
-                        $q->where('university_id', $univId)
-                          ->orWhereNull('university_id');
-                    })
-                    ->orderBy('university_id', 'desc')
-                    ->orderBy('ordre')
-                    ->get();
-
         $hasOwn = Critere::where('university_id', $univId)->exists();
+
+        if ($hasOwn) {
+            $criteres = Critere::where('university_id', $univId)
+                ->orderBy('ordre')
+                ->get();
+        } else {
+            $criteres = Critere::whereNull('university_id')
+                ->orderBy('ordre')
+                ->get();
+        }
 
         return view('gestionnaire.questionnaires', compact('annexe', 'criteres', 'hasOwn'));
     }

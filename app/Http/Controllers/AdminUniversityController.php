@@ -176,22 +176,26 @@ class AdminUniversityController extends Controller
        QUESTIONNAIRES / CRITÈRES
     ═══════════════════════════════════════════════ */
 
-    public function questionnaires()
-    {
-        $univId   = $this->universityId();
-        $criteres = Critere::where(function ($q) use ($univId) {
-                        $q->where('university_id', $univId)
-                          ->orWhereNull('university_id');
-                    })
-                    ->orderBy('university_id', 'desc') // université-spécifiques en premier
-                    ->orderBy('ordre')
-                    ->get();
+   public function questionnaires()
+{
+    $univId = $this->universityId();
 
-        // Indique si l'université a ses propres critères ou hérite des globaux
-        $hasOwn = \App\Models\Critere::where('university_id', $univId)->exists();
+    $hasOwn = Critere::where('university_id', $univId)->exists();
 
-        return view('adminuniversity.questionnaires', compact('criteres', 'hasOwn'));
+    if ($hasOwn) {
+        // L'université a personnalisé : on ne montre QUE ses propres critères
+        $criteres = Critere::where('university_id', $univId)
+            ->orderBy('ordre')
+            ->get();
+    } else {
+        // Aucune personnalisation : on montre les critères globaux du SuperAdmin
+        $criteres = Critere::whereNull('university_id')
+            ->orderBy('ordre')
+            ->get();
     }
+
+    return view('adminuniversity.questionnaires', compact('criteres', 'hasOwn'));
+}
 
     public function saveQuestionnaire(Request $request)
     {
