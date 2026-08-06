@@ -240,41 +240,63 @@ private function genererMotDePasse(string $prenom, string $email): string
         return view('gestionnaire.liens', compact('annexe', 'liens', 'enseignants', 'criteres'));
     }
 
-    public function creerLien(Request $request)
-    {
-        $annexe = $this->annexe();
+   public function creerLien(Request $request)
+{
+    $annexe = $this->annexe();
 
-        $data = $request->validate([
-            'classe'        => ['required', 'string', 'max:100'],
-            'matiere'       => ['nullable', 'string', 'max:100'],
-            'enseignant_id' => ['nullable', 'exists:users,id'],
-            'titre'         => ['required', 'string', 'max:200'],
-            'expire_at'     => ['nullable', 'date', 'after:now'],
-        ]);
+    $data = $request->validate([
+        'classe'        => ['required', 'string', 'max:100'],
+        'matiere'       => ['nullable', 'string', 'max:100'],
+        'enseignant_id' => ['nullable', 'exists:users,id'],
+        'titre'         => ['required', 'string', 'max:200'],
+        'debut_at'      => ['nullable', 'date'],
+        'expire_at'     => ['nullable', 'date', 'after:debut_at'],
+    ]);
 
-        $criteres  = Critere::pourUniversite($annexe->university_id ?? null);
-        $questions = $criteres->map(fn($c) => [
-            'id'          => $c->id,
-            'label'       => $c->nom,
-            'description' => $c->description,
-        ])->values()->toArray();
+    $criteres  = Critere::pourUniversite($annexe->university_id ?? null);
+    $questions = $criteres->map(fn($c) => [
+        'id'          => $c->id,
+        'label'       => $c->nom,
+        'description' => $c->description,
+    ])->values()->toArray();
 
-        LienQuestionnaire::create([
-            'token'           => LienQuestionnaire::genererToken(),
-            'gestionnaire_id' => Auth::id(),
-            'annexe_id'       => $annexe->id,
-            'classe'          => $data['classe'],
-            'matiere'         => $data['matiere'] ?? null,
-            'enseignant_id'   => $data['enseignant_id'] ?? null,
-            'titre'           => $data['titre'],
-            'questions'       => $questions,
-            'statut'          => 'actif',
-            'expire_at'       => $data['expire_at'] ?? null,
-        ]);
+    LienQuestionnaire::create([
+        'token'           => LienQuestionnaire::genererToken(),
+        'gestionnaire_id' => Auth::id(),
+        'annexe_id'       => $annexe->id,
+        'classe'          => $data['classe'],
+        'matiere'         => $data['matiere'] ?? null,
+        'enseignant_id'   => $data['enseignant_id'] ?? null,
+        'titre'           => $data['titre'],
+        'questions'       => $questions,
+        'statut'          => 'actif',
+        'debut_at'        => $data['debut_at'] ?? null,
+        'expire_at'       => $data['expire_at'] ?? null,
+    ]);
 
-        return redirect()->route('gestionnaire.liens')
-            ->with('success', 'Lien questionnaire créé avec succès.');
-    }
+    return redirect()->route('gestionnaire.liens')
+        ->with('success', 'Lien questionnaire créé avec succès.');
+}
+
+/**
+ * Modifie la fenêtre de disponibilité (ouverture / expiration) d'un lien existant.
+ */
+public function programmerLien(Request $request, $id)
+{
+    $annexe = $this->annexe();
+    $lien   = LienQuestionnaire::where('annexe_id', $annexe->id)->findOrFail($id);
+
+    $data = $request->validate([
+        'debut_at'  => ['nullable', 'date'],
+        'expire_at' => ['nullable', 'date', 'after:debut_at'],
+    ]);
+
+    $lien->debut_at  = $data['debut_at'] ?? null;
+    $lien->expire_at = $data['expire_at'] ?? null;
+    $lien->save();
+
+    return back()->with('success', 'Programmation du lien mise à jour.');
+}
 
     public function fermerLien($id)
     {

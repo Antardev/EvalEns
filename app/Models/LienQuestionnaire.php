@@ -13,11 +13,12 @@ class LienQuestionnaire extends Model
 
     protected $fillable = [
         'token', 'gestionnaire_id', 'annexe_id', 'classe', 'matiere',
-        'enseignant_id', 'titre', 'questions', 'statut', 'expire_at',
+        'enseignant_id', 'titre', 'questions', 'statut', 'debut_at', 'expire_at',
     ];
 
     protected $casts = [
         'questions' => 'array',
+        'debut_at'  => 'datetime',
         'expire_at' => 'datetime',
     ];
 
@@ -41,11 +42,50 @@ class LienQuestionnaire extends Model
         return $this->hasMany(ReponseQuestionnaire::class);
     }
 
+    /**
+     * Le lien est-il actuellement accessible ?
+     * Vérifie le statut, la date d'ouverture et la date d'expiration.
+     */
     public function isActif(): bool
     {
         if ($this->statut !== 'actif') return false;
+        if ($this->debut_at && $this->debut_at->isFuture()) return false;
         if ($this->expire_at && $this->expire_at->isPast()) return false;
         return true;
+    }
+
+    /** Le lien est programmé pour une ouverture future (pas encore accessible). */
+    public function estProgramme(): bool
+    {
+        return $this->statut === 'actif'
+            && $this->debut_at
+            && $this->debut_at->isFuture();
+    }
+
+    /** Le lien a dépassé sa date d'expiration. */
+    public function estExpire(): bool
+    {
+        return $this->expire_at && $this->expire_at->isPast();
+    }
+
+    /**
+     * Message expliquant pourquoi le lien n'est pas accessible, ou null s'il l'est.
+     */
+    public function messageIndisponibilite(): ?string
+    {
+        if ($this->statut !== 'actif') {
+            return 'Ce questionnaire est actuellement fermé.';
+        }
+
+        if ($this->estProgramme()) {
+            return 'Ce questionnaire ouvrira le ' . $this->debut_at->format('d/m/Y à H:i') . '.';
+        }
+
+        if ($this->estExpire()) {
+            return 'Ce questionnaire a expiré le ' . $this->expire_at->format('d/m/Y à H:i') . '.';
+        }
+
+        return null;
     }
 
     public function urlPublique(): string

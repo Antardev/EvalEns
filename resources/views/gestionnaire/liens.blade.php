@@ -43,9 +43,10 @@
         <div class="row g-3">
             @foreach($liens as $lien)
             @php
-                $isActif   = $lien->isActif();
-                $isExpire  = $lien->expire_at && $lien->expire_at->isPast();
-                $url       = $lien->urlPublique();
+                $isActif    = $lien->isActif();
+                $isExpire   = $lien->estExpire();
+                $estProg    = $lien->estProgramme();
+                $url        = $lien->urlPublique();
             @endphp
             <div class="col-xl-6 col-12">
                 <div class="card border-0 shadow-sm h-100">
@@ -63,7 +64,9 @@
                                     @endif
                                 </div>
                             </div>
-                            @if($isActif)
+                            @if($estProg)
+                                <span class="badge badge-info px-2 py-1 fs-12">Programmé</span>
+                            @elseif($isActif)
                                 <span class="badge badge-success px-2 py-1 fs-12">Actif</span>
                             @elseif($isExpire)
                                 <span class="badge badge-danger px-2 py-1 fs-12">Expiré</span>
@@ -73,11 +76,17 @@
                         </div>
 
                         {{-- Stats réponses --}}
-                        <div class="d-flex gap-3 mb-3">
+                        <div class="d-flex flex-wrap gap-3 mb-3">
                             <span class="text-muted fs-13">
                                 <i class="lni lni-checkmark-circle me-1 text-success"></i>
                                 <strong>{{ $lien->reponses_count }}</strong> réponse(s)
                             </span>
+                            @if($lien->debut_at)
+                                <span class="fs-13 {{ $estProg ? 'text-info' : 'text-muted' }}">
+                                    <i class="lni lni-calendar me-1"></i>
+                                    Ouvre le {{ $lien->debut_at->format('d/m/Y à H:i') }}
+                                </span>
+                            @endif
                             @if($lien->expire_at)
                                 <span class="fs-13 {{ $isExpire ? 'text-danger' : 'text-muted' }}">
                                     <i class="lni lni-calendar me-1"></i>
@@ -105,7 +114,7 @@
                             @endif
                         </div>
 
-                                        {{-- Alerte snapshot désynchronisé --}}
+                        {{-- Alerte snapshot désynchronisé --}}
                         @if($lien->reponses_count === 0 && count($lien->questions) < $criteres->count())
                         <div class="alert alert-warning py-2 fs-12 mb-3 d-flex align-items-center justify-content-between">
                             <span>
@@ -118,6 +127,35 @@
                                     <i class="lni lni-reload me-1"></i>Rafraîchir
                                 </button>
                             </form>
+                        </div>
+                        @endif
+
+                        {{-- Reprogrammer (si pas encore de réponses) --}}
+                        @if($lien->reponses_count === 0)
+                        <div class="mb-3">
+                            <a class="fs-12 text-primary" data-bs-toggle="collapse" href="#programmer-{{ $lien->id }}" role="button">
+                                <i class="lni lni-timer me-1"></i>Modifier la programmation
+                            </a>
+                            <div class="collapse mt-2" id="programmer-{{ $lien->id }}">
+                                <form method="POST" action="{{ route('gestionnaire.liens.programmer', $lien->id) }}" class="row g-2 align-items-end">
+                                    @csrf @method('PUT')
+                                    <div class="col-6">
+                                        <label class="form-label fs-11 mb-1">Ouverture</label>
+                                        <input type="datetime-local" name="debut_at" id="debutAt-{{ $lien->id }}"
+                                            class="form-control form-control-sm"
+                                            value="{{ $lien->debut_at?->format('Y-m-d\TH:i') }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fs-11 mb-1">Expiration</label>
+                                        <input type="datetime-local" name="expire_at" id="expireAt-{{ $lien->id }}"
+                                            class="form-control form-control-sm"
+                                            value="{{ $lien->expire_at?->format('Y-m-d\TH:i') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-xs btn-outline-primary">Enregistrer</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                         @endif
 
@@ -137,9 +175,9 @@
                             @else
                                 <form method="POST" action="{{ route('gestionnaire.liens.fermer', $lien->id) }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-sm {{ $isActif ? 'btn-warning' : 'btn-success' }}">
-                                        <i class="lni lni-{{ $isActif ? 'lock' : 'unlock' }} me-1"></i>
-                                        {{ $isActif ? 'Fermer' : 'Rouvrir' }}
+                                    <button type="submit" class="btn btn-sm {{ $isActif || $estProg ? 'btn-warning' : 'btn-success' }}">
+                                        <i class="lni lni-{{ $isActif || $estProg ? 'lock' : 'unlock' }} me-1"></i>
+                                        {{ $isActif || $estProg ? 'Fermer' : 'Rouvrir' }}
                                     </button>
                                 </form>
                             @endif
@@ -217,8 +255,14 @@
                             </select>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date d'ouverture </label>
+                            <input type="datetime-local" name="debut_at" id="debutAtCreer" class="form-control"
+                                value="{{ old('debut_at') }}">
+                            <small class="text-muted fs-11">Laissez vide pour une ouverture immédiate.</small>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Date d'expiration </label>
-                            <input type="datetime-local" name="expire_at" class="form-control"
+                            <input type="datetime-local" name="expire_at" id="expireAtCreer" class="form-control"
                                 value="{{ old('expire_at') }}">
                         </div>
 
@@ -263,6 +307,44 @@ function copierUrl(inputId, btn) {
         setTimeout(() => icon.className = 'lni lni-files', 2000);
     });
 }
+
+/**
+ * Lie un champ "début" et un champ "fin" : la date de fin ne peut pas être
+ * antérieure à la date de début. Si une date de fin déjà saisie devient
+ * invalide après changement du début, on la vide.
+ */
+function lierDatesDebutFin(inputDebut, inputFin) {
+    if (!inputDebut || !inputFin) return;
+
+    function appliquerMin() {
+        if (inputDebut.value) {
+            inputFin.min = inputDebut.value;
+            if (inputFin.value && inputFin.value < inputDebut.value) {
+                inputFin.value = '';
+            }
+        } else {
+            inputFin.removeAttribute('min');
+        }
+    }
+
+    inputDebut.addEventListener('change', appliquerMin);
+    appliquerMin(); // applique au chargement (utile pour le formulaire de reprogrammation déjà rempli)
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Modal de création
+    lierDatesDebutFin(
+        document.getElementById('debutAtCreer'),
+        document.getElementById('expireAtCreer')
+    );
+
+    // Formulaires de reprogrammation (un par lien)
+    document.querySelectorAll('[id^="debutAt-"]').forEach(inputDebut => {
+        const id = inputDebut.id.replace('debutAt-', '');
+        const inputFin = document.getElementById('expireAt-' + id);
+        lierDatesDebutFin(inputDebut, inputFin);
+    });
+});
 
 // Ouvrir le modal si erreurs de validation
 @if($errors->any())

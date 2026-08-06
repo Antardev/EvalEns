@@ -99,6 +99,7 @@ Gestionnaire d'annexe
  └── Crée et partage des liens questionnaires (tokenisés)
  └── Consulte les réponses et résultats par questionnaire
  └── Configure les critères d'évaluation (héritables)
+ └── Importation de la liste d'enseignants (Fichier excel)
 
 Enseignant
  └── Peut appartenir à plusieurs annexes (many-to-many)

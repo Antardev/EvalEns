@@ -85,15 +85,7 @@
         <div class="header">
             <div class="header-content">
                 <nav class="navbar navbar-expand">
-                    <div class="collapse navbar-collapse justify-content-between">
-                        <div class="header-left">
-                            <div class="input-group search-area">
-                                <input type="text" class="form-control" placeholder="Rechercher...">
-                                <span class="input-group-text">
-                                    <a href="javascript:void(0)"><i class="flaticon-381-search-2"></i></a>
-                                </span>
-                            </div>
-                        </div>
+                    <div class="collapse navbar-collapse justify-content-end">
                         <ul class="navbar-nav header-right">
                             <li class="nav-item dropdown header-profile">
                                 <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown">

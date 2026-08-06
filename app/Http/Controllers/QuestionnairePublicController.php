@@ -18,63 +18,71 @@ class QuestionnairePublicController extends Controller
         return Critere::pourUniversite($univId);
     }
 
-    public function show($token)
-    {
-        $lien = LienQuestionnaire::where('token', $token)
-            ->with(['enseignant', 'annexe'])
-            ->firstOrFail();
+   public function show($token)
+{
+    $lien = LienQuestionnaire::where('token', $token)
+        ->with(['enseignant', 'annexe'])
+        ->firstOrFail();
 
-        if (! $lien->isActif()) {
-            return view('questionnaire.ferme', compact('lien'));
-        }
-
-        $criteres = $this->criteresPourLien($lien);
-
-        return view('questionnaire.show', compact('lien', 'criteres'));
+    if ($lien->estProgramme()) {
+        return view('questionnaire.pas_encore', compact('lien'));
     }
 
-    public function submit(Request $request, $token)
-    {
-        $lien = LienQuestionnaire::where('token', $token)
-            ->with('annexe')
-            ->firstOrFail();
-
-        if (! $lien->isActif()) {
-            return view('questionnaire.ferme', compact('lien'));
-        }
-
-        $criteres = $this->criteresPourLien($lien);
-
-        $rules = [];
-        foreach ($criteres as $i => $c) {
-            $rules["scores.$i"] = ['required', 'integer', 'between:1,5'];
-        }
-        $rules['commentaire'] = ['nullable', 'string', 'max:1000'];
-
-        $data = $request->validate($rules);
-
-        $scores = [];
-        foreach ($criteres as $i => $c) {
-            $scores[] = [
-                'label' => $c->nom,
-                'score' => (int) $data['scores'][$i],
-            ];
-        }
-
-        ReponseQuestionnaire::create([
-            'lien_questionnaire_id' => $lien->id,
-            'scores'                => $scores,
-            'commentaire'           => $data['commentaire'] ?? null,
-            'soumis_at'             => now(),
-        ]);
-
-        AuditLog::write(
-            'evaluation_soumise',
-            "Évaluation soumise pour l'enseignant « {$lien->enseignant->name} ».",
-            'LienQuestionnaire',
-            $lien->id
-        );
-
-        return view('questionnaire.merci', compact('lien'));
+    if (! $lien->isActif()) {
+        return view('questionnaire.ferme', compact('lien'));
     }
+
+    $criteres = $this->criteresPourLien($lien);
+
+    return view('questionnaire.show', compact('lien', 'criteres'));
+}
+
+public function submit(Request $request, $token)
+{
+    $lien = LienQuestionnaire::where('token', $token)
+        ->with('annexe')
+        ->firstOrFail();
+
+    if ($lien->estProgramme()) {
+        return view('questionnaire.pas_encore', compact('lien'));
+    }
+
+    if (! $lien->isActif()) {
+        return view('questionnaire.ferme', compact('lien'));
+    }
+
+    $criteres = $this->criteresPourLien($lien);
+
+    $rules = [];
+    foreach ($criteres as $i => $c) {
+        $rules["scores.$i"] = ['required', 'integer', 'between:1,5'];
+    }
+    $rules['commentaire'] = ['nullable', 'string', 'max:1000'];
+
+    $data = $request->validate($rules);
+
+    $scores = [];
+    foreach ($criteres as $i => $c) {
+        $scores[] = [
+            'label' => $c->nom,
+            'score' => (int) $data['scores'][$i],
+        ];
+    }
+
+    ReponseQuestionnaire::create([
+        'lien_questionnaire_id' => $lien->id,
+        'scores'                => $scores,
+        'commentaire'           => $data['commentaire'] ?? null,
+        'soumis_at'             => now(),
+    ]);
+
+    AuditLog::write(
+        'evaluation_soumise',
+        "Évaluation soumise pour l'enseignant « {$lien->enseignant->name} ».",
+        'LienQuestionnaire',
+        $lien->id
+    );
+
+    return view('questionnaire.merci', compact('lien'));
+}
 }
