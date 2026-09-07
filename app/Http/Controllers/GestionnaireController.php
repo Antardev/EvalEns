@@ -6,6 +6,7 @@ use App\Models\Annexe;
 use App\Models\Critere;
 use App\Models\LienQuestionnaire;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -286,13 +287,25 @@ public function programmerLien(Request $request, $id)
     $annexe = $this->annexe();
     $lien   = LienQuestionnaire::where('annexe_id', $annexe->id)->findOrFail($id);
 
-    $data = $request->validate([
-        'debut_at'  => ['nullable', 'date'],
-        'expire_at' => ['nullable', 'date', 'after:debut_at'],
-    ]);
+    $rules = [
+        'debut_at'  => ['nullable', 'date_format:Y-m-d\TH:i', 'after_or_equal:now'],
+        'expire_at' => ['nullable', 'date_format:Y-m-d\TH:i'],
+    ];
 
-    $lien->debut_at  = $data['debut_at'] ?? null;
-    $lien->expire_at = $data['expire_at'] ?? null;
+    $data = $request->validate($rules);
+
+    // Vérification manuelle : expire_at doit être après debut_at
+    if (!empty($data['debut_at']) && !empty($data['expire_at'])) {
+        $debutTs = Carbon::createFromFormat('Y-m-d\TH:i', $data['debut_at'])->timestamp;
+        $expireTs = Carbon::createFromFormat('Y-m-d\TH:i', $data['expire_at'])->timestamp;
+
+        if ($expireTs <= $debutTs) {
+            return back()->withErrors(['expire_at' => 'La date d\'expiration doit être après la date d\'ouverture.']);
+        }
+    }
+
+    $lien->debut_at  = $data['debut_at'] ? Carbon::createFromFormat('Y-m-d\TH:i', $data['debut_at'])->setSeconds(0) : null;
+    $lien->expire_at = $data['expire_at'] ? Carbon::createFromFormat('Y-m-d\TH:i', $data['expire_at'])->setSeconds(59) : null;
     $lien->save();
 
     return back()->with('success', 'Programmation du lien mise à jour.');

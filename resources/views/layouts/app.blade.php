@@ -290,6 +290,27 @@
             @yield('content')
         </div>
 
+        @if(session('teacher_first_login'))
+            <div class="modal fade" id="teacherFirstLoginModal" tabindex="-1" aria-labelledby="teacherFirstLoginModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="teacherFirstLoginModalLabel">Bienvenue sur ÉvalENS</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body">
+                            Pour sécuriser votre compte, veuillez modifier votre mot de passe lors de cette première connexion.
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{{ route('profile.show', ['tab' => 'password']) }}" class="btn btn-primary">
+                                Modifier mon mot de passe
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="footer">
             <div class="copyright">
                 <p>Copyright © ÉvalENS {{ date('Y') }}</p>
@@ -303,6 +324,13 @@
     <script src="{{ asset('dashboard/js/custom.min.js') }}"></script>
     <script src="{{ asset('dashboard/js/deznav-init.js') }}"></script>
     @stack('scripts')
+    @if(session('teacher_first_login'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                new bootstrap.Modal(document.getElementById('teacherFirstLoginModal')).show();
+            });
+        </script>
+    @endif
 
 </body>
 </html>

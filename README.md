@@ -81,7 +81,7 @@ php artisan serve
 
 ---
 
-## Architecture des rôles
+## Architecture des rôles 
 
 ```
 SuperAdmin

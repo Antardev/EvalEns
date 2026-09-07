@@ -142,7 +142,7 @@ Route::middleware(['auth', EnsureIsGestionnaire::class])
         // Liens questionnaires
         Route::get('/liens',                    'liens')->name('liens');
         Route::post('/liens',                   'creerLien')->name('liens.creer');
-        Route::post('/liens/{id}/programmer',  'programmerLien')->name('liens.programmer');
+        Route::put('/liens/{id}/programmer',   'programmerLien')->name('liens.programmer');
         Route::post('/liens/{id}/fermer',       'fermerLien')->name('liens.fermer');
         Route::post('/liens/{id}/rafraichir',   'rafraichirLien')->name('liens.rafraichir');
         Route::delete('/liens/{id}',            'supprimerLien')->name('liens.supprimer');

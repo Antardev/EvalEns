@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -16,7 +17,7 @@ class User extends Authenticatable
     protected $fillable = [
         'prenom', 'nom', 'name',
         'email', 'role', 'password',
-        'university_id', 'annexe_id', 'avatar',
+        'university_id', 'annexe_id', 'avatar', 'first_login_at',
     ];
 
     protected $hidden = [
@@ -28,6 +29,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'first_login_at'    => 'datetime',
             'password'          => 'hashed',
         ];
     }
@@ -52,6 +54,11 @@ class User extends Authenticatable
     public function avatarUrl(): ?string
     {
         return $this->avatar ? asset('storage/' . $this->avatar) : null;
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     public function isSuperAdmin(): bool    { return $this->role === 'superadmin'; }

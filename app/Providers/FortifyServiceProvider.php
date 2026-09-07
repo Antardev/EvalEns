@@ -24,7 +24,14 @@ class FortifyServiceProvider extends ServiceProvider
             return new class implements LoginResponse {
                 public function toResponse($request)
                 {
-                    return redirect(auth()->user()->dashboardRoute());
+                    $user = auth()->user();
+
+                    if ($user->isEnseignant() && $user->first_login_at === null) {
+                        $user->forceFill(['first_login_at' => now()])->save();
+                        session()->flash('teacher_first_login', true);
+                    }
+
+                    return redirect($user->dashboardRoute());
                 }
             };
         });

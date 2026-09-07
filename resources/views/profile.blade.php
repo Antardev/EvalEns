@@ -13,7 +13,7 @@ $roleLabels = [
 ];
 $rl = $roleLabels[$user->role] ?? ['label' => $user->role, 'class' => 'badge-secondary'];
 
-$activeTab = session('active_tab', 'info');
+$activeTab = request('tab', session('active_tab', 'info'));
 if ($errors->has('current_password') || $errors->has('password')) $activeTab = 'password';
 if ($errors->has('prenom') || $errors->has('nom') || $errors->has('email')) $activeTab = 'info';
 if (session('success_password')) $activeTab = 'password';

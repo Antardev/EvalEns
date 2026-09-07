@@ -331,6 +331,23 @@ function lierDatesDebutFin(inputDebut, inputFin) {
     appliquerMin(); // applique au chargement (utile pour le formulaire de reprogrammation déjà rempli)
 }
 
+/**
+ * Définit l'attribut min sur tous les champs de type datetime-local
+ * dont l'ID commence par "debutAt" (création + reprogrammations).
+ * La valeur min est la date/heure actuelle (locale).
+ */
+function definirMinMaintenant() {
+    const maintenant = new Date();
+    // Ajustement du fuseau horaire pour obtenir le format attendu par datetime-local
+    const offset = maintenant.getTimezoneOffset();
+    const locale = new Date(maintenant.getTime() - offset * 60 * 1000);
+    const minStr = locale.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
+
+    document.querySelectorAll('input[type="datetime-local"][id^="debutAt"]').forEach(input => {
+        input.setAttribute('min', minStr);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Modal de création
     lierDatesDebutFin(
@@ -344,6 +361,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const inputFin = document.getElementById('expireAt-' + id);
         lierDatesDebutFin(inputDebut, inputFin);
     });
+
+    // --- Nouveauté : empêcher la sélection d'une date antérieure à maintenant ---
+    definirMinMaintenant();
+
+    // Mise à jour du min à chaque ouverture du modal
+    const modal = document.getElementById('modalCreer');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', definirMinMaintenant);
+    }
 });
 
 // Ouvrir le modal si erreurs de validation
