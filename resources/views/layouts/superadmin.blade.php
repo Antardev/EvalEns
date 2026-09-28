@@ -148,13 +148,13 @@
                             <span class="nav-text">Critères d'évaluation</span>
                         </a>
                     </li>
-
+{{-- 
                     <li class="{{ request()->routeIs('superadmin.statistiques*') ? 'mm-active' : '' }}">
                         <a href="{{ route('superadmin.statistiques') }}" class="ai-icon">
                             <i class="flaticon-381-internet"></i>
                             <span class="nav-text">Statistiques</span>
                         </a>
-                    </li>
+                    </li> --}}
 
                     <li class="{{ request()->routeIs('superadmin.logs*') ? 'mm-active' : '' }}">
                         <a href="{{ route('superadmin.logs') }}" class="ai-icon">

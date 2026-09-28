@@ -36,7 +36,7 @@
                 </select>
                 <select name="role" class="form-select w-auto">
                     <option value="">Tous les rôles</option>
-                    <option value="etudiant"   {{ request('role') === 'etudiant'   ? 'selected' : '' }}>Étudiant</option>
+                    {{-- <option value="etudiant"   {{ request('role') === 'etudiant'   ? 'selected' : '' }}>Étudiant</option> --}}
                     <option value="enseignant" {{ request('role') === 'enseignant' ? 'selected' : '' }}>Enseignant</option>
                     <option value="directeur"  {{ request('role') === 'directeur'  ? 'selected' : '' }}>Directeur</option>
                 </select>
@@ -57,7 +57,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <span class="text-muted fs-13">{{ $counts['total'] }} utilisateur(s) au total</span>
                 <div class="d-flex gap-2">
-                    <span class="badge badge-info badge-sm">Étudiants : {{ $counts['etudiants'] }}</span>
+                    {{-- <span class="badge badge-info badge-sm">Étudiants : {{ $counts['etudiants'] }}</span> --}}
                     <span class="badge badge-warning badge-sm">Enseignants : {{ $counts['enseignants'] }}</span>
                     <span class="badge badge-success badge-sm">Directeurs : {{ $counts['directeurs'] }}</span>
                 </div>

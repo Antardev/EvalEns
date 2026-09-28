@@ -154,12 +154,12 @@ class SuperAdminController extends Controller
             $query->where('university_id', $univId);
         }
 
-        $users        = $query->paginate(20)->withQueryString();
+        $users        = $query->paginate(10)->withQueryString();
         $universities = \App\Models\University::where('statut', 'active')->orderBy('nom')->get(['id', 'nom']);
 
         $counts = [
             'total'      => \App\Models\User::whereNot('role', 'superadmin')->count(),
-            'etudiants'  => \App\Models\User::where('role', 'etudiant')->count(),
+            // 'etudiants'  => \App\Models\User::where('role', 'etudiant')->count(),
             'enseignants'=> \App\Models\User::where('role', 'enseignant')->count(),
             'directeurs' => \App\Models\User::where('role', 'directeur')->count(),
         ];
@@ -167,12 +167,22 @@ class SuperAdminController extends Controller
         return view('SuperAdmin.utilisateurs', compact('users', 'universities', 'counts'));
     }
 
-    public function universites()
-    {
-        $references = UniversityReference::orderBy('nom')->get();
+  public function universites(Request $request)
+{
+    // Référentiel des universités (références)
+    $references = UniversityReference::orderBy('nom')->get();
 
-        return view('SuperAdmin.universites', compact('references'));
-    }
+    // Universités approuvées avec leur directeur
+    $universitesApprouvees = University::with('directeur')
+        ->where('statut', 'active')
+        ->orderBy('nom')
+        ->paginate(15)
+        ->withQueryString();
+
+
+    return view('SuperAdmin.universites', compact('references', 'universitesApprouvees'));
+}
+
 
     public function creerUniversite(Request $request)
     {
