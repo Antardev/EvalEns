@@ -10,12 +10,12 @@
             <h2 class="text-primary font-w600 mb-0">Enseignants</h2>
             <p class="mb-0">Tous les enseignants inscrits dans cette université</p>
         </div>
-        <div class="d-flex gap-2 align-items-center">
+        {{-- <div class="d-flex gap-2 align-items-center">
             <span class="badge badge-success px-3 py-2 fs-13">{{ $total }} enseignant{{ $total !== 1 ? 's' : '' }}</span>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreerEnseignant">
                 <i class="lni lni-plus me-1"></i>Ajouter
             </button>
-        </div>
+        </div> --}}
     </div>
 
     @if(session('success'))
