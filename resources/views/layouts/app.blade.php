@@ -162,12 +162,12 @@
                                 <span class="nav-text">Questionnaires</span>
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('adminuniversity.rapports*') ? 'mm-active' : '' }}">
+                        {{-- <li class="{{ request()->routeIs('adminuniversity.rapports*') ? 'mm-active' : '' }}">
                             <a href="{{ route('adminuniversity.rapports') }}" class="ai-icon">
                                 <i class="flaticon-381-internet"></i>
                                 <span class="nav-text">Rapports &amp; Exports</span>
                             </a>
-                        </li>
+                        </li> --}}
 
                     @elseif($isTeacher)
 
