@@ -245,14 +245,17 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Enseignant évalué </label>
-                            <select name="enseignant_id" class="form-select">
-                                <option value="">— Aucun / Général —</option>
-                                @foreach($enseignants as $ens)
-                                    <option value="{{ $ens->id }}" {{ old('enseignant_id') == $ens->id ? 'selected' : '' }}>
-                                        {{ $ens->prenom }} {{ $ens->nom }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="position-relative">
+                                <input type="text" id="enseignantSearch" class="form-control" placeholder="Rechercher un enseignant..." autocomplete="off">
+                                <div id="enseignantDropdown" class="dropdown-menu w-100 shadow-sm" style="display:none; max-height:220px; overflow-y:auto; position:absolute; z-index:1050; margin-top:4px;">
+                                    @foreach($enseignants as $ens)
+                                        <button type="button" class="dropdown-item" data-value="{{ $ens->id }}" data-label="{{ $ens->prenom }} {{ $ens->nom }}">
+                                            {{ $ens->prenom }} {{ $ens->nom }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                                <input type="hidden" name="enseignant_id" id="enseignant_id_hidden" value="{{ old('enseignant_id', '') }}">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Date d'ouverture </label>
@@ -349,6 +352,79 @@ function definirMinMaintenant() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const dropdown = document.getElementById('enseignantDropdown');
+    const searchInput = document.getElementById('enseignantSearch');
+    const hiddenInput = document.getElementById('enseignant_id_hidden');
+
+    if (dropdown && searchInput && hiddenInput) {
+        const options = Array.from(dropdown.querySelectorAll('.dropdown-item'));
+        const normaliser = (value) => (value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+
+        const afficherDropdown = (show) => {
+            dropdown.style.display = show ? 'block' : 'none';
+        };
+
+        const selectionner = (button) => {
+            const value = button.dataset.value || '';
+            const label = button.dataset.label || '';
+
+            hiddenInput.value = value;
+            searchInput.value = label;
+            afficherDropdown(false);
+        };
+
+        const filtrerEnseignants = () => {
+            const terme = normaliser(searchInput.value.trim());
+            let visibles = 0;
+
+            options.forEach((option) => {
+                const texte = normaliser(option.dataset.label || option.textContent || '');
+                const match = !terme || texte.includes(terme);
+                option.style.display = match ? 'block' : 'none';
+                if (match) visibles++;
+            });
+
+            if (terme && visibles === 0) {
+                hiddenInput.value = '';
+            }
+        };
+
+        searchInput.addEventListener('focus', () => afficherDropdown(true));
+        searchInput.addEventListener('input', () => {
+            afficherDropdown(true);
+            filtrerEnseignants();
+        });
+
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                afficherDropdown(false);
+            }
+        });
+
+        options.forEach((option) => {
+            option.addEventListener('click', () => selectionner(option));
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!dropdown.contains(event.target) && !searchInput.contains(event.target)) {
+                afficherDropdown(false);
+            }
+        });
+
+        const selectedValue = hiddenInput.value;
+        const selectedOption = options.find(option => option.dataset.value === selectedValue);
+        if (selectedOption) {
+            searchInput.value = selectedOption.dataset.label || selectedOption.textContent || '';
+        } else {
+            searchInput.value = '';
+        }
+
+        filtrerEnseignants();
+    }
+
     // Modal de création
     lierDatesDebutFin(
         document.getElementById('debutAtCreer'),

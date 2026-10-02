@@ -150,6 +150,12 @@
                                 <span class="nav-text">Enseignants</span>
                             </a>
                         </li>
+                        <li class="{{ request()->routeIs('adminuniversity.enseignants.questionnes') ? 'mm-active' : '' }}">
+                            <a href="{{ route('adminuniversity.enseignants.questionnes') }}" class="ai-icon">
+                                <i class="flaticon-381-user-9"></i>
+                                <span class="nav-text">Enseignants questionnés</span>
+                            </a>
+                        </li>
                         <li class="{{ request()->routeIs('adminuniversity.annexes*') ? 'mm-active' : '' }}">
                             <a href="{{ route('adminuniversity.annexes') }}" class="ai-icon">
                                 <i class="flaticon-381-map-2"></i>
@@ -208,6 +214,12 @@
                             <a href="{{ route('gestionnaire.dashboard') }}" class="ai-icon">
                                 <i class="flaticon-381-networking"></i>
                                 <span class="nav-text">Tableau de bord</span>
+                            </a>
+                        </li>
+                        <li class="{{ request()->routeIs('gestionnaire.enseignants.questionnes') ? 'mm-active' : '' }}">
+                            <a href="{{ route('gestionnaire.enseignants.questionnes') }}" class="ai-icon">
+                                <i class="flaticon-381-user-9"></i>
+                                <span class="nav-text">Enseignants questionnés</span>
                             </a>
                         </li>
                         <li class="{{ request()->routeIs('gestionnaire.enseignants') ? 'mm-active' : '' }}">

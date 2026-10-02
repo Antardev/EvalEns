@@ -166,6 +166,19 @@
             </a>
         </div>
         <div class="col-xl-4 col-md-6">
+            <a href="{{ route('adminuniversity.enseignants.questionnes') }}" class="card text-decoration-none">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="d-flex align-items-center justify-content-center bg-info text-white rounded" style="width:48px;height:48px;">
+                        <i class="flaticon-381-user-9 fs-20"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">Enseignants questionnés</h5>
+                        <small class="text-muted">Déjà évalués</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {{-- <div class="col-xl-4 col-md-6">
             <a href="{{ route('adminuniversity.rapports') }}" class="card text-decoration-none">
                 <div class="card-body d-flex align-items-center gap-3 py-3">
                     <div class="d-flex align-items-center justify-content-center bg-info text-white rounded" style="width:48px;height:48px;">
@@ -177,7 +190,7 @@
                     </div>
                 </div>
             </a>
-        </div>
+        </div> --}}
     </div>
 
 </div>

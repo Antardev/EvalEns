@@ -51,6 +51,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Annexe::class, 'enseignant_annexes');
     }
 
+    public function liensQuestionnaires(): HasMany
+    {
+        return $this->hasMany(LienQuestionnaire::class, 'enseignant_id');
+    }
+
     public function avatarUrl(): ?string
     {
         return $this->avatar ? asset('storage/' . $this->avatar) : null;

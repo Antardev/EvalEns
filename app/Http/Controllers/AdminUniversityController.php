@@ -89,6 +89,36 @@ class AdminUniversityController extends Controller
         return view('adminuniversity.enseignants', compact('annexes', 'enseignants', 'total'));
     }
 
+    public function enseignantsQuestionnes(Request $request)
+    {
+        $univId = $this->universityId();
+
+        $query = User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+            ->where('role', 'enseignant')
+            ->whereHas('liensQuestionnaires', fn($q) => $q->whereHas('annexe', fn($sub) => $sub->where('university_id', $univId))->has('reponses'))
+            ->with(['liensQuestionnaires' => fn($q) => $q->whereHas('annexe', fn($sub) => $sub->where('university_id', $univId))->with('reponses')])
+            ->withCount([
+                'liensQuestionnaires as questionnaires_count' => fn($q) => $q->whereHas('annexe', fn($sub) => $sub->where('university_id', $univId)),
+                'liensQuestionnaires as evaluations_count' => fn($q) => $q->whereHas('annexe', fn($sub) => $sub->where('university_id', $univId))->has('reponses'),
+            ])
+            ->with('annexes')
+            ->latest();
+
+        if ($search = $request->input('search')) {
+            $query->where(fn($q) => $q->where('prenom', 'like', "%$search%")
+                                      ->orWhere('nom', 'like', "%$search%")
+                                      ->orWhere('email', 'like', "%$search%"));
+        }
+
+        $enseignants = $query->paginate(30)->withQueryString();
+        $total       = User::whereHas('annexes', fn($q) => $q->where('university_id', $univId))
+            ->where('role', 'enseignant')
+            ->whereHas('liensQuestionnaires', fn($q) => $q->whereHas('annexe', fn($sub) => $sub->where('university_id', $univId))->has('reponses'))
+            ->count();
+
+        return view('adminuniversity.enseignants-questionnes', compact('enseignants', 'total'));
+    }
+
     public function creerEnseignant(Request $request)
     {
         $request->validate([

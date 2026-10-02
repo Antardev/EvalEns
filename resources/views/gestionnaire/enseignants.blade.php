@@ -113,6 +113,7 @@
                                 <th>Nom</th>
                                 <th>Email</th>
                                 <th>Ajouté le</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -129,6 +130,20 @@
                                 </td>
                                 <td class="text-muted fs-13">{{ $m->email }}</td>
                                 <td class="text-muted fs-13">{{ $m->created_at->format('d/m/Y') }}</td>
+                                <td class="text-center">
+                                    <a href="{{ route('gestionnaire.enseignants.statistiques', $m->id) }}"
+                                       class="btn btn-sm btn-outline-primary me-1"
+                                       data-bs-toggle="tooltip" data-bs-placement="top" title="Statistiques">
+                                        <i class="lni lni-bar-chart"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                        title="Supprimer"
+                                        data-bs-toggle="modal" data-bs-target="#modalSupprimerEnseignant"
+                                        data-id="{{ $m->id }}"
+                                        data-nom="{{ $m->prenom }} {{ $m->nom }}">
+                                        <i class="lni lni-trash"></i>
+                                    </button>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -145,8 +160,47 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalSupprimerEnseignant" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Supprimer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formSupprimerEnseignant" method="POST">
+                    @csrf @method('DELETE')
+                    <div class="modal-body">
+                        <p>Supprimer <strong id="nomSupprimerEnseignant"></strong> de cette annexe ?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="lni lni-trash me-1"></i>Supprimer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
+    });
+
+    document.addEventListener('click', function (e) {
+        const delBtn = e.target.closest('[data-bs-target="#modalSupprimerEnseignant"]');
+        if (delBtn) {
+            document.getElementById('nomSupprimerEnseignant').textContent = delBtn.dataset.nom;
+            document.getElementById('formSupprimerEnseignant').action = '/gestionnaire/enseignants/' + delBtn.dataset.id;
+        }
+    });
+</script>
+@endpush
 
 @if($errors->any() && $errors->has('fichier'))
 <script>

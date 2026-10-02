@@ -56,6 +56,107 @@ class GestionnaireController extends Controller
         return view('gestionnaire.enseignants', compact('annexe', 'membres', 'total'));
     }
 
+    public function enseignantStatistiques($id)
+    {
+        $annexe = $this->annexe();
+
+        $enseignant = User::where('role', 'enseignant')
+            ->whereHas('annexes', fn($q) => $q->where('annexes.id', $annexe->id))
+            ->with('annexes')
+            ->findOrFail($id);
+
+        $liens = LienQuestionnaire::where('enseignant_id', $id)
+            ->where('annexe_id', $annexe->id)
+            ->with(['reponses', 'annexe'])
+            ->latest()
+            ->get();
+
+        $toutesReponses = $liens->flatMap->reponses;
+        $totalReponses  = $toutesReponses->count();
+        $totalLiens     = $liens->count();
+
+        $moyenneGlobale = $totalReponses > 0
+            ? round($toutesReponses->avg(fn($r) => $r->moyenneGlobale()), 2)
+            : null;
+
+        $scoresParCritere = [];
+        foreach ($toutesReponses as $reponse) {
+            foreach (($reponse->scores ?? []) as $item) {
+                $label = $item['label'] ?? '?';
+                $scoresParCritere[$label][] = $item['score'] ?? 0;
+            }
+        }
+        $moyennesParCritere = collect($scoresParCritere)
+            ->map(fn($s) => round(array_sum($s) / count($s), 2));
+
+        $commentaires = $toutesReponses
+            ->filter(fn($r) => !empty($r->commentaire))
+            ->sortByDesc('soumis_at')
+            ->take(10);
+
+        $statsParLien = $liens->map(function ($lien) {
+            $count = $lien->reponses->count();
+            return [
+                'titre'      => $lien->titre ?: ($lien->matiere ?? 'Sans titre'),
+                'classe'     => $lien->classe ?? '—',
+                'annexe'     => $lien->annexe->nom ?? '—',
+                'statut'     => $lien->statut,
+                'expire_at'  => $lien->expire_at,
+                'reponses'   => $count,
+                'moyenne'    => $count > 0 ? round($lien->reponses->avg(fn($r) => $r->moyenneGlobale()), 2) : null,
+                'created_at' => $lien->created_at,
+            ];
+        });
+
+        return view('gestionnaire.enseignant-statistiques', compact(
+            'annexe', 'enseignant', 'totalReponses', 'totalLiens', 'moyenneGlobale',
+            'moyennesParCritere', 'commentaires', 'statsParLien'
+        ));
+    }
+
+    public function enseignantsQuestionnes(Request $request)
+    {
+        $annexe = $this->annexe();
+
+        $query = User::whereHas('annexes', fn($q) => $q->where('annexes.id', $annexe->id))
+            ->where('role', 'enseignant')
+            ->whereHas('liensQuestionnaires', fn($q) => $q->where('annexe_id', $annexe->id)->has('reponses'))
+            ->with(['liensQuestionnaires' => fn($q) => $q->where('annexe_id', $annexe->id)->with('reponses')])
+            ->withCount([
+                'liensQuestionnaires as questionnaires_count' => fn($q) => $q->where('annexe_id', $annexe->id),
+                'liensQuestionnaires as evaluations_count' => fn($q) => $q->where('annexe_id', $annexe->id)->has('reponses'),
+            ])
+            ->latest();
+
+        if ($search = $request->input('search')) {
+            $query->where(fn($q) => $q->where('prenom', 'like', "%$search%")
+                                      ->orWhere('nom', 'like', "%$search%")
+                                      ->orWhere('email', 'like', "%$search%"));
+        }
+
+        $membres = $query->paginate(20)->withQueryString();
+        $total   = User::whereHas('annexes', fn($q) => $q->where('annexes.id', $annexe->id))
+            ->where('role', 'enseignant')
+            ->whereHas('liensQuestionnaires', fn($q) => $q->where('annexe_id', $annexe->id)->has('reponses'))
+            ->count();
+
+        return view('gestionnaire.enseignants-questionnes', compact('annexe', 'membres', 'total'));
+    }
+
+    public function supprimerEnseignant($id)
+    {
+        $annexe = $this->annexe();
+
+        $enseignant = User::where('role', 'enseignant')
+            ->whereHas('annexes', fn($q) => $q->where('annexes.id', $annexe->id))
+            ->findOrFail($id);
+
+        $enseignant->annexes()->detach($annexe->id);
+
+        return redirect()->route('gestionnaire.enseignants')
+            ->with('success', 'L\'enseignant a bien été supprimé de cette annexe.');
+    }
+
  public function importerEnseignants(Request $request)
 {
     $annexe = $this->annexe();

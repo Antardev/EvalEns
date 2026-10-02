@@ -107,6 +107,7 @@ Route::middleware(['auth', 'director.onboarding'])
         Route::get('/', 'dashboard')->name('dashboard');
 
         Route::get('/enseignants',                    'enseignants')->name('enseignants');
+        Route::get('/enseignants/questionnes',        'enseignantsQuestionnes')->name('enseignants.questionnes');
         Route::get('/enseignants/{id}/statistiques', 'enseignantStatistiques')->name('enseignants.statistiques');
         Route::post('/enseignants',        'creerEnseignant')->name('enseignants.creer');
         Route::put('/enseignants/{id}',    'modifierEnseignant')->name('enseignants.modifier');
@@ -137,6 +138,9 @@ Route::middleware(['auth', EnsureIsGestionnaire::class])
     ->group(function () {
         Route::get('/',            'dashboard')->name('dashboard');
         Route::get('/enseignants', 'enseignants')->name('enseignants');
+        Route::get('/enseignants/{id}/statistiques', 'enseignantStatistiques')->name('enseignants.statistiques');
+        Route::delete('/enseignants/{id}', 'supprimerEnseignant')->name('enseignants.supprimer');
+        Route::get('/enseignants/questionnes', 'enseignantsQuestionnes')->name('enseignants.questionnes');
         Route::post('/enseignants/importer', 'importerEnseignants')->name('enseignants.importer');
 
         // Liens questionnaires
