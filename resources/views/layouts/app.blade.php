@@ -144,7 +144,7 @@
                                 <span class="nav-text">Tableau de bord</span>
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('adminuniversity.enseignants*') ? 'mm-active' : '' }}">
+                        <li class="{{ request()->routeIs('adminuniversity.enseignants', 'adminuniversity.enseignants.statistiques') ? 'mm-active' : '' }}">
                             <a href="{{ route('adminuniversity.enseignants') }}" class="ai-icon">
                                 <i class="flaticon-381-user-9"></i>
                                 <span class="nav-text">Enseignants</span>
@@ -201,12 +201,12 @@
                                 <span class="nav-text">Commentaires</span>
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('teacher.rapport*') ? 'mm-active' : '' }}">
+                        {{-- <li class="{{ request()->routeIs('teacher.rapport*') ? 'mm-active' : '' }}">
                             <a href="{{ route('teacher.rapport') }}" class="ai-icon">
                                 <i class="flaticon-381-layer-1"></i>
                                 <span class="nav-text">Mon rapport PDF</span>
                             </a>
-                        </li>
+                        </li> --}}
 
                     @elseif($isGestionnaire)
 
